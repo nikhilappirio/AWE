@@ -44,6 +44,7 @@
               <apex:column value="{!cr.Field_Type__c}"/>
               
           </apex:pageBlockTable>
+          
            <apex:outputLabel value="No records to display" rendered="{!(ISNULL(Criterias) || Criterias.size=0 )}" styleClass="noRowsHeader"></apex:outputLabel>
       </apex:pageBlock>
       

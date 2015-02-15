@@ -24,11 +24,23 @@
           <apex:pageBlockSection columns="1">
               <apex:pageBlockSectionItem >FILTER LOGIC : {!Rule__c.Filter_Logic__c}</apex:pageBlockSectionItem>
           </apex:pageBlockSection>
+          
+			<!-- Update Start By Nikil 11/FEB/2015 for enhancement ITLTC-660 -->
+			<apex:variable value="{!1}" var="index"/>
+			<!-- Update End By Nikil 11/FEB/2015 for enhancement ITLTC-660 -->   
+          
           <apex:pageBlockTable value="{!Criterias}" var="cr" rendered="{!Criterias.size > 0}">
                <apex:column headerValue="" >
                   <a href="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!Rule__c.Id}"  > Edit </a>&nbsp;|&nbsp; <a href="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!Rule__c.Id}" >Del</a>
               <!--javascript:if (window.confirm('Are you sure?')) {DeleteCriteria('{!cr.Id}');}-->
                </apex:column>
+				
+				<!-- Update Start By Nikil 11/FEB/2015 for enhancement ITLTC-660 -->
+				<apex:column headerValue="Sr. No.">
+					{!index} <apex:variable value="{!index + 1}" var="index"/>
+				</apex:column>
+				<!-- Update End By Nikil 11/FEB/2015 for enhancement ITLTC-660 -->
+				
               <apex:column headerValue="Reference ID" >
                   <a href="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!Rule__c.Id}" > {!cr.Name} </a>
               </apex:column>

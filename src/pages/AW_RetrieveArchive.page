@@ -1,0 +1,52 @@
+<apex:page standardController="Advance_Workflow__c" extensions="AW_RetrieveArchiveExtensions"  id="pg" >
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-1.8.3.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-ui.min.js')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery-ui.css')}"/> 
+<apex:form id="frm">
+    <apex:SectionHeader title="Archived Rules" /> 
+    <apex:pageMessages />
+    <apex:pageBlock id="pb" >
+       <apex:pageBlockButtons >
+            <apex:commandButton value="Display Archived Rule" action="{!retrieveRuleArchive}" rerender="pb" />
+            <apex:commandButton value="Cancel" onclick="window.location.href = '/{!Advance_Workflow__c.id}';return false;" />
+        </apex:pageBlockButtons>
+        <apex:outputLabel value="Rule" />&nbsp;&nbsp;&nbsp;
+        <apex:outputPanel >
+         <apex:inputHidden id="ruleArchiveId" value="{!ruleArchiveId}" />
+         <apex:inputText id="ruleName" value="{!ruleName}" onfocus="lookupFocus();" >
+            
+         </apex:inputText>
+         <a href="javascript:OpenChildWindow('/apex/AW_RuleLookup')" title="Rule (New Window)" onfocus="lookupFocus();" onclick="setLastMousePosition(event)" id="rule_lkwgt" >
+         <img title="Rule Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Rule Lookup (New Window)" src="/s.gif" /></a>
+         </apex:outputPanel> 
+         <br/>
+     </apex:pageBlock>
+     <script> 
+        function lookupFocus(){
+            var aTag = document.getElementById('rule_lkwgt');
+            document.getElementById('rule_lkwgt').href = "javascript:OpenChildWindow('/apex/AW_RuleLookup')";
+        }
+
+        function OpenChildWindow(url){
+            var ruleNameComp = document.getElementById('pg:frm:pb:ruleName');
+            url +='?objName={!objName}&aweObjName=Rule_Archive__c';
+            if(ruleNameComp != null && ruleNameComp.value != null){
+                url += '&sText='+ruleNameComp.value;
+            }
+            newwindow=window.open(url,'name','width=550,height=550,top=50,toolbar=no,personalbar=no,location=no,directories=no,statusbar=no,menubar=no,status=no,re sizable=yes,left=60,screenX=60,top=100,screenY=100');
+            if (window.focus){newwindow.focus()}
+        }
+        
+        function setPickValue(id,name){
+            var ruleNameComp = document.getElementById('pg:frm:pb:ruleName');
+            var ruleIdComp = document.getElementById('pg:frm:pb:ruleArchiveId');
+            if(ruleIdComp != null){
+                ruleIdComp.value = id;
+            }
+            if(ruleNameComp != null){
+                ruleNameComp.value = name;
+            }
+        }
+    </script>
+</apex:form>
+</apex:page>

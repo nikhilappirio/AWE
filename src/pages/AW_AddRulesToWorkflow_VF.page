@@ -1,0 +1,61 @@
+<!-- *********************************************************************************
+Name : AW_AddRulesToWorkflow_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 20 Dec 2013
+Purpose : Custom  page to add ruless to AWE
+********************************************************************************* --><apex:page standardController="Advance_Workflow__c" extensions="AW_AddRulesToWorkflowController" tabStyle="Advance_Workflow__c">
+    <apex:form >
+        <apex:sectionHeader subtitle="{!ruleExecutionPlan.Name}" title="Rule Execution Plan Edit"/>
+        <apex:pageMessages />
+        <apex:pageBlock title="Rules">
+            <apex:pageBlockButtons >
+                <apex:commandButton value="Save" action="{!AddRule}" rendered="{!(ruleExecutionPlan.Enabled__c)}" /> 
+                <apex:commandButton value="Cancel" action="{!Cancel}"/> 
+            </apex:pageBlockButtons>
+            <apex:pageBlockTable rendered="{!IF(listAddRulesPerObject.size > 0,True,False)}" value="{!listAddRulesPerObject}" var="RO">
+                <apex:column headerValue="Add/Remove">
+                    <apex:inputCheckbox value="{!RO.isAdd}"  disabled="{!NOT(ruleExecutionPlan.Enabled__c)}"/> 
+                </apex:column>
+                <apex:column headerValue="Order" style="width:5px" >
+                    <apex:inputField value="{!RO.Rules.Order__c}" style="width: 55px;" />
+                </apex:column>                  
+
+             <apex:column headerValue="{!$ObjectType.Rule__c.fields.Name.label}" >
+                    <apex:outputLink value="/{!RO.Rules.Id}">
+                        <apex:outputlabel value="{!RO.Rules.Name}" style="width: 20px;"></apex:outputlabel>
+                    </apex:outputLink> 
+             </apex:column>
+                
+             <apex:column headerValue="{!$ObjectType.Rule__c.fields.Status__c.label}" >                
+                <apex:outputlabel value="{!RO.Rules.Status__c}" style="width: 10px;"></apex:outputlabel>
+            </apex:column>  
+            
+            <apex:column headerValue="{!$ObjectType.Rule__c.fields.Evaluation_Rule__c.label}" >
+                <apex:outputlabel value="{!RO.Evaluation}" style="width: 10px;"></apex:outputlabel>
+            </apex:column>
+            
+            <apex:column headerValue="Rule Execution" >
+                    <apex:selectList size="1"  value="{!RO.Rules.Execution_Behavior__c}" >
+                        <apex:selectOptions value="{!ExecutionBehavior}" />
+                    </apex:selectList>
+            </apex:column>
+            <apex:column headerValue="Display Criteria" >
+                  <apex:outputlink target="_top" value="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!RO.Rules.Id}">
+                        <apex:outputText style="width: 25px;" value="{!RO.Criteria}" title="{!RO.DisplayCriteria}"></apex:outputText>
+                  </apex:outputlink>                
+            </apex:column>      
+             <apex:column headerValue="Display Actions">
+                  <apex:outputlink target="_top" value="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!RO.Rules.Id}">
+                        <apex:outputText style="width: 25px;" value="{!RO.Actions}" title="{!RO.DisplayActions}"></apex:outputText>
+                  </apex:outputlink>                 
+            </apex:column>     
+               <!-- 
+               <apex:column value="{!RO.Rules.Object__c}" width="55%"/>
+                  <apex:column value="{!RO.Rules.Evaluation_Rule__c}" width="55%"/>
+                <apex:column value="{!RO.Rules.DisplayfilterLogic__c}" width="20%"/>
+                <apex:column value="{!RO.Rules.DisplayActions__c}" width="55%"/> -->                
+                <!-- apex:column value="{!RO.Rules.Object__c}" width="10%"/!-->
+           </apex:pageBlockTable> 
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

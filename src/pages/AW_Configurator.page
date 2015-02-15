@@ -1,0 +1,166 @@
+<apex:page controller="AW_ConfiguratorController">
+<style>
+.panelBarStyle{background-color:#439FBA;color:White;background-image:none;height:20px;font-family:Verdana; font-size:13px;}
+   .contentStyle{color:black;font-family:verdana;font-size:12px;}
+</style>
+<apex:form id="form" >
+<apex:pageMessages ></apex:pageMessages>
+<apex:panelBar headerClass="panelBarStyle" contentClass="contentStyle" >
+<apex:panelBarItem label="AWE Limits">
+  <apex:pageBlock title="AWE Limits">
+  
+  <apex:pageBlockTable value="{!lstAdvWorkflowLimits}" var="awelimit">
+     <apex:column headerValue="Limit Name">
+        <apex:outputField value="{!awelimit.Name}"/>
+     </apex:column>
+     <apex:column headerValue="Value">
+        <apex:inputField value="{!awelimit.Value__c}"/>
+     </apex:column>
+   </apex:pageBlockTable>
+   <apex:commandButton action="{!saveLimits}" value="Save" rerender="form"/>   
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultLimits}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+   </apex:pageBlock>
+</apex:panelBarItem>
+<apex:panelBarItem label="AWE Conf">
+<apex:pageBlock title="AWE Conf">
+<apex:pageBlockTable value="{!lstAdvWorkflowConf}" var="aweconf">
+     <apex:column headerValue="Name">
+        <apex:outputField value="{!aweconf.Name}"/>
+     </apex:column>
+     <apex:column headerValue="Batch Size">
+        <apex:inputField value="{!aweconf.Batch_Size__c}"/>
+     </apex:column>
+     <apex:column headerValue="Delay Time">
+        
+        <apex:inputField value="{!aweconf.Delay_Time__c}"/>
+     </apex:column>
+      <apex:column headerValue="Threshold for Async Invocation">
+        <apex:inputField value="{!aweconf.Threshold_for_Async_Invocation__c}"/>
+     </apex:column>
+   </apex:pageBlockTable>
+   <apex:commandButton action="{!saveConf}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultConfig}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+
+<apex:panelBarItem label="AWE Admins">
+<apex:pageBlock title="AWE admins">
+<apex:pageBlockTable value="{!lstAdvWorkflowAdmins}" var="aweadmins">
+     <apex:column headerValue="Email Id">
+        <apex:inputField value="{!aweadmins.Emailid__c}"/>
+     </apex:column>
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!saveAdmins}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultAdmins}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+
+<!-- <apex:panelBarItem label="Apex Log Settings">
+<apex:pageBlock title="Apex Log Settings">
+<apex:pageBlockTable value="{!lstApexLogSettings}" var="settings">
+     <apex:column headerValue="Activate System Logs">
+        <apex:inputField value="{!settings.Activate_System_Logs__c}"/>
+     </apex:column>
+     <apex:column headerValue="Active">
+        <apex:inputField value="{!settings.Active__c}"/>
+     </apex:column>
+     <apex:column headerValue="Log DML Exceptions">
+        <apex:inputField value="{!settings.LogDmlExceptions__c}"/>
+     </apex:column>
+     <apex:column headerValue="Log Level">
+        <apex:inputField value="{!settings.Log_Level__c}"/>
+     </apex:column>
+     <apex:column headerValue="Max Days">
+        <apex:inputField value="{!settings.MaxDays__c}"/>
+     </apex:column>
+      <apex:column headerValue="Max Records">
+        <apex:inputField value="{!settings.MaxRecords__c}"/>
+     </apex:column>
+     <apex:column headerValue="Send Email">
+        <apex:inputField value="{!settings.Send_Email__c}"/>
+     </apex:column>
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!saveSettings}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultSettings}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem> -->
+
+<apex:panelBarItem label="Assignment Setup">
+<apex:pageBlock title="Assignment Setup">
+<apex:pageBlockTable value="{!lstAsgnSetup}" var="asgnSetup">
+     <apex:column headerValue="Max Assignment">
+        <apex:inputField value="{!asgnSetup.Max_Assignment__c}"/>
+     </apex:column>
+      <apex:column headerValue="Number Of Weight">
+        <apex:inputField value="{!asgnSetup.Number_Of_Weight__c}"/>
+     </apex:column>
+      <apex:column headerValue="Priority Divisor">
+        <apex:inputField value="{!asgnSetup.Priority_Divisor__c}"/>
+     </apex:column>
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!saveAssignmentSetup}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!saveDefaultAssgSettings}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+
+<apex:panelBarItem label="Rule Action Mapping">
+<apex:pageBlock title="Rule Action Mapping">
+<apex:pageBlockTable value="{!lstAWERuleActionMapping}" var="mapping">
+     <apex:column headerValue="Field API Name">
+        <apex:inputField value="{!mapping.Field_API_Name__c}"/>
+     </apex:column>
+      <apex:column headerValue="Field Name">
+        <apex:inputField value="{!mapping.Field_Name__c}"/>
+     </apex:column>
+      <apex:column headerValue="Object Name">
+        <apex:inputField value="{!mapping.Object_Name__c}"/>
+     </apex:column>
+     <apex:column headerValue="Type">
+        <apex:inputField value="{!mapping.Type__c}"/>
+     </apex:column>
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!saveMapping}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultMappings}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+
+<apex:panelBarItem label="Rule Lookup Page Size">
+<apex:pageBlock title="Rule Lookup Page Size">
+<apex:pageBlockTable value="{!lstRuleLookupPageSize}" var="pagesize">
+     <apex:column headerValue="Page Size">
+        <apex:inputField value="{!pagesize.page_size__c}"/>
+     </apex:column>      
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!savePageSize}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!createDefaultPageStng}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+<apex:panelBarItem label="Custom Lookup List View Fields"  >
+<apex:pageBlock title="Custom Lookup List View">
+<apex:pageBlockTable value="{!lstAweCustomLookupListFields}" var="mapping">
+     <apex:column headerValue="Field API Name">
+        <apex:inputField value="{!mapping.Field_API_Name__c}"/>
+     </apex:column>
+      <apex:column headerValue="is Filter Field">
+        <apex:inputField value="{!mapping.isName__c}"/>
+     </apex:column>
+      <apex:column headerValue="Object Name">
+        <apex:inputField value="{!mapping.Object_Name__c}"/>
+     </apex:column>
+     </apex:pageBlockTable>
+   <apex:commandButton action="{!saveCustomLookupSettings}" value="Save" rerender="form"/>
+   <apex:commandButton value="Load Default" onclick="if(!confirm('Are you sure you want to delete existing and load defaults ?')){return};" action="{!saveDefaultCustomLookupSettings}"  rerender="form"/>
+   <apex:commandButton action="{!resetValues}" value="Reset" rerender="form"/>
+   <apex:commandButton action="/home/home.jsp" value="Cancel"/>
+</apex:pageBlock></apex:panelBarItem>
+</apex:panelBar>
+</apex:form>
+</apex:page>

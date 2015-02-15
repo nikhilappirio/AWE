@@ -1,0 +1,39 @@
+<apex:page controller="AW_ClonePage_Controller" tabStyle="Rule__c">
+<apex:messages style="color:red" />
+<table width="100%" height="100%"> 
+    <tr>
+        <td width="50%" height="100%">
+            <apex:form >
+            <br/>
+            <apex:outputPanel rendered="{!hasChildRecords && numberOfItems<=15}">
+            Also clone Criteria, Actions? <br/><br/>
+            
+                <apex:selectCheckboxes value="{!objects}" layout="pageDirection">
+                    <apex:selectOptions value="{!items}"/> 
+                </apex:selectCheckboxes>
+            
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!hasChildRecords && numberOfItems>15}">
+            Choose what child records need to be cloned. Press "Ctrl" key if you want to do multiple select:<br/><br/>
+                
+                <apex:selectList value="{!objects}" size="10" multiselect="true">
+                    <apex:selectOptions value="{!items}"/>
+                </apex:selectList><p/>
+                     
+            </apex:outputPanel>
+                
+            <apex:outputPanel rendered="{!NOT(hasChildRecords)}">
+                This record does not have any child records. Click <strong>Clone</strong> button if you just want to clone the record on its own<br/><br/>
+            </apex:outputPanel>
+                <br/><br/>
+                
+            <apex:commandButton action="{!chainclone}" value="Clone" id="Button"/>
+            <apex:commandButton action="{!cancel}" value="Cancel"/>
+            </apex:form>
+         </td>
+         
+    </tr>
+</table>
+
+</apex:page>

@@ -1,0 +1,520 @@
+<apex:page id="pg" standardController="Advance_Workflow__c" extensions="AW_SimulateWorkflowCapture" >
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-1.8.3.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-ui.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery.multiselect.js')}"/>
+
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery-ui.css')}"/> 
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery.multiselect.css')}"/>
+    <apex:sectionHeader title="Advance Workflow" subtitle="{!Advance_Workflow__c.Name}" />
+    
+    <apex:pageMessages id="msgPanel" />
+    
+    <style type="text/css" >
+        .popupBackground { 
+            background-color:black;
+            opacity: 0.20;
+            filter: alpha(opacity = 20);
+            width: 100%; 
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 998;
+            position: absolute;
+         }
+         
+        .popupPanel {
+            border: solid 1px;
+            background-color: white;
+            left: 50%;
+            width: 200px;
+            margin-left: -100px;
+            top: 50%;
+            height: 50px;
+            margin-top: -25px;
+            z-index: 999;
+            position:fixed;
+        }  
+        
+        table.criteriaTable {
+            width : 100%;
+            padding-top :20px; 
+        }
+
+
+
+    </style>
+
+    <!-- "Loading" or "Processing" popup --->
+    <apex:actionStatus id="processingStatus" stopText="" >
+        <apex:facet name="start">
+            <div>
+                <div class="popupBackground" />
+                <div class="popupPanel">
+                    <table border="0" width="100%" height="100%">
+                        <tr>
+                            <td align="center" style="font-family: Calibri; font-size: 13px; font-weight: normal;"><b>Processing... Please Wait</b></td>
+                        </tr>
+                        <tr>
+                            <td align="center"><img src="/img/loading.gif"/></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </apex:facet>
+    </apex:actionStatus>
+    
+    <apex:form id="pbForm">
+        <apex:pageBlock title="Simulate Execution of workflow" id="pbBlock" >
+            <apex:pageBlockButtons location="top" >
+                <apex:commandButton rerender="pbForm,msgPanel" status="processingStatus" action="{!simulateWorkflow}" value="Run Simulation" />
+                <apex:commandButton value="Cancel" action="{!cancel}" status="processingStatus"/>
+            </apex:pageBlockButtons>
+            
+            <!-- Mode options -->
+            <apex:selectRadio value="{!selectedMode}" >
+                <apex:selectOption itemValue="workflow" itemLabel="Simulate Execution By Workflow" />
+                <apex:selectOption itemValue="rule" itemLabel="Simulate Execution By Rule" />
+                <apex:actionSupport event="onchange" action="{!ruleCriterias}" status="processingStatus" rerender="pbForm,msgPanel" />
+            </apex:selectRadio>
+            
+            <apex:outputPanel layout="block" style="padding-top:20px;" >
+                <apex:pageBlockSection id="pbs" columns="2" collapsible="false" >
+                    <!-- Workflow name -->
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel style="font-weight:bold;" value="Workflow Name" />
+                        <apex:outputLink value="/{!workFlow.id}" > {!Advance_Workflow__c.Name}</apex:outputLink>
+                    </apex:pageBlockSectionItem>
+                    
+                    <!-- Create Record -->
+                    <apex:selectRadio value="{!operationType}" >
+                        <apex:selectOption itemValue="create" itemLabel="Create Record" />
+                        <apex:selectOption itemValue="update" itemLabel="Update Record" />
+                        <apex:actionSupport event="onchange" action="{!checkSelectedMode}" status="processingStatus" rerender="pbForm,msgPanel" >
+                            <apex:param name="recordName" value="" assignTo="{!recordName}" />
+                        </apex:actionSupport>
+                    </apex:selectRadio>
+                    
+                    <!-- Rules Record -->
+                    <apex:outputLabel value="" rendered="{!selectedMode != 'rule'}" />
+                    <apex:pageBlockSectionItem id="ruleSec" rendered="{!selectedMode == 'rule'}" >
+                        <apex:outputLabel value="Rule" />
+                        <!-- <apex:selectList value="{!selectedRule}" size="1" multiselect="false"  >
+                            <apex:selectOption itemValue="" itemLabel="--None--" />
+                            <apex:selectOptions value="{!Rules}" />
+                            <apex:actionSupport event="onchange" action="{!ruleCriterias}" status="processingStatus" rerender="pbForm,msgPanel" />
+                        </apex:selectList> --> 
+                        <apex:outputPanel >
+                        <apex:inputHidden id="ruleId" value="{!selectedRule}" />
+                        <apex:inputText id="ruleName" value="{!ruleName}" onfocus="lookupFocus();" onchange="onChangeRule();">
+                        	
+                        </apex:inputText>
+                        <a href="javascript:OpenChildWindow('/apex/AW_RuleLookup')" title="Rule (New Window)" onfocus="lookupFocus();" onclick="setLastMousePosition(event)" id="rule_lkwgt" >
+                        <img title="Rule Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Rule Lookup (New Window)" src="/s.gif" /></a>
+                        </apex:outputPanel> 
+                    </apex:pageBlockSectionItem> 
+                    
+                    <apex:outputPanel layout="block" id="updatePanel" rendered="{!operationType == 'update'}" >
+                        <apex:outputLabel style="font-weight:bold;" value="Record Name" />&nbsp;&nbsp;
+                        <apex:outputPanel rendered="{!recordOptions.size = 0}" >
+	                        <apex:inputHidden id="recName_lkid" value="{!recordInputCapture['Id']}"  />
+	                        <apex:inputText id="recName" value="{!recordInputCapture[IF(workFlow.Object__c == 'Case', 'CaseNumber','Name')]}" onchange="searchSobject();"/>
+	                        <apex:inputHidden id="recName_lspfsub" />
+	                        <apex:inputHidden id="recName_lkold" />
+	                        <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="recName_lkwgt" href="javascript:openRecordLookup();">
+	                        	<img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+	                        </a>
+	                   </apex:outputPanel>  
+	                   <apex:outputPanel rendered="{!recordOptions.size > 0}" >
+	                         <apex:selectList value="{!recordInputCapture['Id']}" size="1"  onchange="renderInputFields(this.value);">
+	                            <apex:selectOptions value="{!recordOptions}"/>
+                        	</apex:selectList>
+	                   </apex:outputPanel>   
+                        
+                    </apex:outputPanel>
+                    
+                    <!-- Rule action
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Rule Action" />
+                        <apex:selectList value="{!ruleAction}" size="1" multiselect="false" >
+                            <apex:selectOption itemValue="" itemLabel="--None--" />
+                            <apex:selectOption itemValue="insert" itemLabel="Insert" />
+                            <apex:selectOption itemValue="update" itemLabel="Update" />
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>--> 
+                </apex:pageBlockSection> 
+            </apex:outputPanel>
+             </apex:pageBlock>
+            <!-- Results sections -->
+            <apex:outputPanel id="resultsPanel" style="padding-top:2em;" layout="block" >
+            	<apex:pageBlock title="Results" rendered="{!isResultPanel}" >
+                <apex:pageBlockSection title="Update Section" columns="1" collapsible="true" >
+                    <!-- Before values -->
+                    <!-- <apex:pageBlockSectionItem > -->
+                       <!-- <apex:outputLabel style="font-weight:bold;" value="Before Execution Record Values: " />
+                        <apex:outputText value="{!beforeValue}" rendered="{!operationType == 'update'}" />!-->
+                        <apex:outputPanel >
+                        <table class="list" cellpadding="0" cellspacing="0">
+                        	<tr class="headerRow">
+	                        	<th>
+	                        		field Name
+	                        	</th>
+	                        	<th>
+	                        		Before Value
+	                        	</th>
+	                        	<th>
+	                        		After Value
+	                        	</th>
+                        	</tr>
+                        	<apex:repeat value="{!mapResultInfo}" var="bv"  >
+                        		<tr class="dataRow">
+                        			<td>
+                        				{!mapResultInfo[bv].fieldLabel}
+                        			</td>
+                        			<td>
+                        				<apex:outputLabel rendered="{!ISBLANK(mapResultInfo[bv].beforeRefId)}" value="{!mapResultInfo[bv].beforeValue}" />
+                            			<apex:outputLink rendered="{!!ISBLANK(mapResultInfo[bv].beforeRefId)}" value="/{!mapResultInfo[bv].beforeRefId}" >{!mapResultInfo[bv].beforeValue}</apex:outputLink>
+                            		</td>
+                        			<td>
+                        				<apex:outputLabel rendered="{!ISBLANK(mapResultInfo[bv].afterRefId)}" value="{!mapResultInfo[bv].afterValue}" />
+                            			<apex:outputLink rendered="{!!ISBLANK(mapResultInfo[bv].afterRefId)}" value="/{!mapResultInfo[bv].afterRefId}" >{!mapResultInfo[bv].afterValue}</apex:outputLink>
+                        			</td>
+                        		</tr>
+                        		<apex:repeat value="{!mapResultInfo[bv].lookupResults}" var="bvlr" rendered="{!NOT(ISNULL(mapResultInfo[bv].lookupResults))}">
+                        		<tr class="dataRow" >
+                        			<td style="padding-left:30px;color:gray;">
+                        				{!bvlr.fieldLabel}
+                        			</td>
+                        			<td style="color:gray;">
+                        				<apex:outputLabel rendered="{!ISBLANK(bvlr.beforeRefId)}" value="{!bvlr.beforeValue}" />
+                            			<apex:outputLink rendered="{!!ISBLANK(bvlr.beforeRefId)}" value="/{!bvlr.beforeRefId}" >{!bvlr.beforeValue}</apex:outputLink>
+                            		</td>
+                        			<td style="color:gray;">
+                        				<apex:outputLabel rendered="{!ISBLANK(bvlr.afterRefId)}" value="{!bvlr.afterValue}" />
+                            			<apex:outputLink rendered="{!!ISBLANK(bvlr.afterRefId)}" value="/{!bvlr.afterRefId}" >{!bvlr.afterValue}</apex:outputLink>
+                        			</td>
+                        		</tr>
+                        		</apex:repeat>
+                        	</apex:repeat>
+                        </table>
+                        </apex:outputPanel>
+                        	<apex:repeat value="{!childObjectFields}" var="chdObj">
+                        		<apex:pageBlockSection title="Other Updates">
+                        			<table class="list" cellspacing="0" cellpadding="0" width="100%">
+                        		
+                        				<tr class="dataRow">
+                        					<th style="vertical-align: middle;width:10%">{!chdObj} (nn)</th>
+                        					<td>
+                        						<table class="list" cellspacing="0" cellpadding="0" width="90%">
+                        							<tr class="headerRow">
+                        								<th> Field Name</th>
+                        								<th> Field Value</th>
+                        							</tr>
+                        							<apex:repeat value="{!childObjectFields[chdObj]}" var="val" >
+                        								<tr class="dataRow">
+	                        								<td> {!val.fieldLabel} </td>
+	                        								<td> {!val.afterValue}</td>
+                        								</tr>
+                        							</apex:repeat>
+                        						</table>
+                        					</td>
+                        				</tr>
+                        			</table>
+                        		</apex:pageBlockSection>
+                        	</apex:repeat>
+                       <!--   <apex:pageBlockTable value="{!mapResultInfo}" var="bv"  >
+                            <apex:column headerValue="Field Label" value="{!mapResultInfo[bv].fieldLabel}" />
+                            <apex:column headerValue="Before Value" >
+                            	<apex:outputLabel rendered="{!ISBLANK(mapResultInfo[bv].beforeRefId)}" value="{!mapResultInfo[bv].beforeValue}" />
+                            	<apex:outputLink rendered="{!!ISBLANK(mapResultInfo[bv].beforeRefId)}" value="/{!mapResultInfo[bv].beforeRefId}" >{!mapResultInfo[bv].beforeValue}</apex:outputLink>
+                            </apex:column>
+                            <apex:column headerValue="After Value" >
+                            	<apex:outputLabel rendered="{!ISBLANK(mapResultInfo[bv].afterRefId)}" value="{!mapResultInfo[bv].afterValue}" />
+                            	<apex:outputLink rendered="{!!ISBLANK(mapResultInfo[bv].afterRefId)}" value="/{!mapResultInfo[bv].afterRefId}" >{!mapResultInfo[bv].afterValue}</apex:outputLink>
+                            {!mapResultInfo[bv].lookupResults}</apex:column>
+                        </apex:pageBlockTable>-->
+	                <!--  </apex:pageBlockSectionItem>   --> 
+                </apex:pageBlockSection> 
+                 <div class="pbSubheader brandTertiaryBgr tertiaryPalette">
+                 	<img title="Hide Section - Insert/Upsert Actions" tabindex="0" style="cursor:pointer;" onkeypress="if (event.keyCode=='13')twistSection(this);" onclick="twistSection(this);" name="Insert/Upsert Actions" id="insertImg" class="hideListButton" alt="Hide Section - Insert/Upsert Actions" src="/s.gif" />
+                 	<h3>Insert/Upsert Actions</h3>
+                 </div>
+<!--                  <apex:pageBlockSection title="Other Actions" columns="1" collapsible="true" rendered="{!isResultPanel}" >-->
+                 	<div>
+                 	<apex:repeat value="{!mapOtherObjResultInfo}" var="insertActions" >
+                 		<apex:repeat value="{!mapOtherObjResultInfo[insertActions]}" var="ac">
+                 		<b>{!insertActions} - {!mapOtherObjResultInfo[insertActions][ac].objectName}</b>
+                 			 <apex:pageBlockTable value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos}" var="rInfo" >
+                 				<apex:column headerValue="field Label" value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].fieldLabel}" />
+                 				<apex:column headerValue="Before Value"  >
+                 					<apex:outputLabel rendered="{!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].beforeRefId)}" value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].BeforeValue}" />
+                            		<apex:outputLink rendered="{!!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].beforeRefId)}" value="/{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].BeforeRefId}" >{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].BeforeValue}</apex:outputLink>
+                 				</apex:column>
+                 				<apex:column headerValue="After Value"  >
+                 					<apex:outputLabel rendered="{!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId)}" value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterValue}" />
+                            		<apex:outputLink rendered="{!!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId)}" value="/{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId}" >{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterValue}</apex:outputLink>
+                 				</apex:column>
+                 			</apex:pageBlockTable>
+                 			<!-- <table class="list" cellpadding="0" cellspacing="0" border="0">
+                 				<apex:repeat value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos}" var="rInfo" >
+                 					<tr class="dataRow">
+                 						<td> {!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].fieldLabel} </td>
+                 						 <td>
+                        					<apex:outputLabel rendered="{!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId)}" value="{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterValue}" />
+                            				<apex:outputLink rendered="{!!ISBLANK(mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId)}" value="/{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterRefId}" >{!mapOtherObjResultInfo[insertActions][ac].resultInfos[rInfo].afterValue}</apex:outputLink>
+                            			</td>
+                 					</tr>
+                 				</apex:repeat>	
+                 			</table> -->
+                 		</apex:repeat>
+                 	</apex:repeat>
+                 	</div>
+                 <div class="pbSubheader brandTertiaryBgr tertiaryPalette">
+                 	<img title="Hide Section - Other Actions" tabindex="0" style="cursor:pointer;" onkeypress="if (event.keyCode=='13')twistSection(this);" onclick="twistSection(this);" name="Other Actions" id="img_pg:pbForm:j_id64:j_id99" class="hideListButton" alt="Hide Section - Other Actions" src="/s.gif" />
+                 	<h3>Other Actions</h3>
+                 </div>
+<!--                  <apex:pageBlockSection title="Other Actions" columns="1" collapsible="true" rendered="{!isResultPanel}" >-->
+                 	<div>
+                 	<apex:repeat value="{!mapOtherActions}" var="otherAction" >
+                 		<b>{!otherAction}</b>
+                 		
+                 		<apex:repeat value="{!mapOtherActions[otherAction]}" var="ac">
+                 			<!--  <apex:pageBlockTable value="{!mapOtherActions[otherAction][ac].resultInfos}" var="rInfo" >
+                 				<apex:column value="{!rInfo.fieldLabel}" />
+                 				<apex:column value="{!rInfo.afterValue}" />
+                 			</apex:pageBlockTable>-->
+                 			<table class="list" cellpadding="0" cellspacing="0" border="0">
+                 				<apex:repeat value="{!mapOtherActions[otherAction][ac].resultInfos}" var="rInfo" >
+                 					<tr class="dataRow">
+                 						<td> {!mapOtherActions[otherAction][ac].resultInfos[rInfo].fieldLabel} : </td>
+                 						 <td>
+                        					<apex:outputLabel rendered="{!ISBLANK(mapOtherActions[otherAction][ac].resultInfos[rInfo].afterRefId)}" value="{!mapOtherActions[otherAction][ac].resultInfos[rInfo].afterValue}" />
+                            				<apex:outputLink rendered="{!!ISBLANK(mapOtherActions[otherAction][ac].resultInfos[rInfo].afterRefId)}" value="/{!mapOtherActions[otherAction][ac].resultInfos[rInfo].afterRefId}" >{!mapOtherActions[otherAction][ac].resultInfos[rInfo].afterValue}</apex:outputLink>
+                            			</td>
+                 					</tr>
+                 				</apex:repeat>	
+                 			</table>
+                 		</apex:repeat>
+                 	</apex:repeat>
+                 	</div>
+<!--                 </apex:pageBlockSection>-->
+               </apex:pageBlock>
+            </apex:outputPanel>
+           
+        
+        <!-- Input Fields Block --> <!--  {!showInputBlock}-->
+        <apex:outputPanel id="inputFieldsPanel" >
+        <apex:pageBlock id="inputFieldsBlock" rendered="{!showInputBlock}" >
+            <apex:outputLabel value="There are no active rules and criterias to display." rendered="{!criteriaList.size == 0}" />
+            <apex:pageBlockButtons location="bottom" >
+                <apex:commandButton rerender="pbForm,msgPanel" action="{!simulateWorkflow}" status="processingStatus" value="Run Simulation" />
+                <apex:commandButton value="Cancel" action="{!cancel}" />
+            </apex:pageBlockButtons>
+            
+            <!-- Rules Section (New as requested) -->
+            <!--  <apex:pageBlockSection title="Rules" columns="1" collapsible="true" rendered="{!AND(selectedMode == 'workflow', !isResultPanel)}" >
+                <apex:repeat value="{!criteriaList}" var="criteria" >
+                    <apex:outputPanel layout="block">
+                        {!criteria.counter}. &nbsp;<apex:outputLink value="/{!criteria.rule.Id}" >{!criteria.rule.Name}</apex:outputLink>
+                    </apex:outputPanel>  
+                    <!--  <apex:pageBlockTable value="{!ruleActionMap[criteria.rule.Id]}" var="ra">
+                    	<apex:column headerValue="Field API Name" rendered="{!ra.Type__c = 'Update Field'}">
+                    		{!ra.related_Object__c}.{!ra.field_API_Name__c}
+                    	</apex:column>  
+                    	<apex:column headerValue="Field Value" >
+                    		{!IF(NOT(ISBLANK(ra.value__c)) , ra.value__c ,IF(NOT(ISBLANK(ra.Long_Value__c)) , ra.Long_Value__c ,ra.Reference_Id__c))}  
+                    	</apex:column>
+                    </apex:pageBlockTable>
+                </apex:repeat>
+            </apex:pageBlockSection> -->
+        
+            <apex:outputPanel layout="none" style="padding-bottom:15px;" rendered="{!AND(selectedMode == 'rule' , criteriaList.size > 0) }" >
+                <apex:outputText value="FILTER LOGIC : {!criteriaList[0].rule.Filter_Logic__c}" /><br /><br />
+                <apex:pageBlockTable value="{!criteriaList[0].ruleCriteriaList}" var="criteria" rendered="{!criteriaList.size > 0}" >
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Name.Label}" value="{!criteria.ruleCriteria.Name}" />
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Related_Object__c.Label}" value="{!criteria.ruleCriteria.Related_Object__c}" />
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Field_Name__c.Label}" value="{!criteria.ruleCriteria.Field_Name__c}" />
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Field_API_Name__c.Label}" value="{!criteria.ruleCriteria.Field_API_Name__c}" />
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Matching_Type__c.Label}" value="{!criteria.ruleCriteria.Matching_Type__c}" />
+                    <apex:column headerValue="{!$ObjectType.RuleCriteria__c.fields.Matching_Value__c.Label}" >
+                        <apex:outputText value="{!criteria.ruleCriteria.Matching_Value__c}"  rendered="{!!ISBLANK(criteria.ruleCriteria.Matching_Value__c)}"/>
+                        <apex:outputText value="{!criteria.ruleCriteria.Minimum_Value__c} - {!criteria.ruleCriteria.Maximum_Value__c}" rendered="{!AND(ISBLANK(criteria.ruleCriteria.Matching_Value__c) ,!ISBLANK(criteria.ruleCriteria.Maximum_Value__c) , !ISBLANK(criteria.ruleCriteria.Minimum_Value__c))}"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+            </apex:outputPanel> 
+            <!-- Get the rule criteria for each rule -->
+             <apex:pageblocksection id="filterPanel" title="Input Section" columns="1">
+                 <apex:variable value="{!1}" var="Counter" />
+                  <apex:pageBlockTable value="{!FilterWrapper}" var="fw" width="100%"  rendered="{!FilterWrapper.size > 0}"  >                    
+                    <apex:column headerValue="S.No" width="10%"> 
+                        <label class="span1"><span class="badge badge-important" width="10%"><apex:outputText value="{!Counter}"/>
+                        </span></label><apex:variable value="{!Counter+1}" var="Counter" />
+                    </apex:column>
+                    
+                     <apex:column headerValue="Field">
+                    
+                     <apex:selectList id="choosefield" value="{!fw.Field_Name}" size="1"  rendered="true" 
+                     style="if(this.options.value=='Cross Formula',color:red;,;)" styleClass="input-medium span3 changeColor" 
+                     onchange="renderOperator(this.options[this.selectedIndex].value,this.id)">
+                        <apex:selectOptions value="{!objectFields}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:column>
+                    
+                      <!--  This is value column which render on basis of field type -->                                                         
+                       <apex:column headerValue="Value" id="FieldsValues">
+                       <apex:outputPanel id="ValueText" rendered="{!!ISBLANK(fw.Field_Name)}"  > 
+                         <apex:inputField id="fd" value="{!recordInputCapture[fw.Field_Name]}" required="false" rendered="{!AND(fw.isEditable , fw.field_Name != 'OwnerName')}" onchange="populateReferenceFieldsJS('{!fw.field_type}', '{!fw.field_Name}', this);"/> 
+                         <apex:outputPanel >
+                         	<apex:InputText value="{!fw.field_Value}" styleClass="cToDatePicker"  rendered="{!AND(!fw.isEditable , OR(fw.field_type = 'DATE' , fw.field_type = 'DATETIME') , fw.field_Name != 'OwnerName')}"/>
+                         </apex:outputPanel>
+                         <apex:InputText value="{!fw.field_Value}" styleClass="input-medium span3" rendered="{!AND(!fw.isEditable , fw.field_type != 'DATE' , fw.field_type != 'DATETIME' , fw.field_type != 'BOOLEAN', fw.field_Name != 'OwnerName')}"/>
+                         <apex:inputCheckbox value="{!fw.field_Value}" styleClass="input-medium span3" rendered="{!AND(!fw.isEditable , fw.field_type = 'BOOLEAN' , fw.field_Name != 'OwnerName')}"/>
+                         <apex:inputField value="{!recordInputCapture['OwnerId']}"  rendered="{!fw.field_Name = 'OwnerName'}" required="false"/>
+                         </apex:outputPanel>
+                       <!--   <apex:outputPanel id="ValueText" rendered="{!fw.isTextBox}"  >                           
+                           <apex:InputText value="{!fw.textBox}" styleClass="input-medium span3"/>
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ValueDateText" rendered="{!fw.isDateTime}"  >                           
+                           <apex:InputText value="{!fw.textBox}" styleClass="cToDatePicker"/>
+                       </apex:outputPanel>
+                       <apex:outputPanel id="ValueReference" rendered="{!fw.isReference}"  >                           
+                           <apex:inputField value="{!recordInputCapture[fw.Field_Name]}" />
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ValueCheckbox" rendered="{!fw.isBoolean}"  >
+                           <apex:inputCheckbox value="{!fw.checkBox}" styleClass="input-medium span3"/>
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ValuePicklist" rendered="{!fw.isPicklist}"  >                                 
+                                  <apex:selectList id="chooseValue" value="{!fw.textBox}" size="1" multiselect="false"  rendered="true" 
+                                  styleClass="input-medium span3" >
+                                <apex:selectOptions value="{!fw.ValueOption}"></apex:selectOptions>
+                                </apex:selectList>
+                       </apex:outputPanel>
+                        
+                         <apex:outputPanel id="ValuePicklistMulti" rendered="{!fw.isMultiselect}"  >
+                                   <apex:selectList id="chooseValueMulti" value="{!fw.picklistvalues}" size="2" multiselect="true"  rendered="true" 
+                                   styleClass="input-medium span3 multiselect" >
+                                <apex:selectOptions value="{!fw.ValueOption}"></apex:selectOptions>
+                                </apex:selectList>
+                       </apex:outputPanel>   -->                    
+
+                    </apex:column> 
+                    
+                    <apex:column headerValue="Action" >
+                    <apex:panelGrid columns="2">
+                     <apex:commandbutton value="+"   action="{!addmorefilter}"  rendered="{!if(FilterWrapper.size+1==Counter,true,false)}" rerender="filterPanel,CommandBox" oncomplete="showCrossObjectFieldInColor();" /> 
+                      <apex:commandbutton value="-"  action="{!deletefilter}" rerender="filterPanel,CommandBox"  oncomplete="showCrossObjectFieldInColor();" >
+                   <apex:param name="index" value="{!Counter}" assignTo="{!toremovecounter}" ></apex:param> 
+                </apex:commandbutton>  
+                </apex:panelGrid>
+                    </apex:column>
+                    
+                </apex:pageBlockTable> 
+                <apex:outputPanel rendered="{!FilterWrapper.size = 0}">
+                	<apex:commandbutton value="Add Fields"   action="{!addmorefilter}"  rerender="filterPanel,CommandBox, msgPanel" />
+                </apex:outputPanel>
+         </apex:pageblocksection>
+         <apex:actionRegion >
+             <apex:actionFunction name="renderOperator" action="{!populateOperator}" reRender="filterPanel, msgPanel" oncomplete="showCrossObjectFieldInColor();" >
+                  <apex:param name="parentField" value="" assignTo="{!parentField}"/>
+                  <apex:param name="Inde" value="" assignTo="{!index}"/>
+             </apex:actionFunction>
+         </apex:actionRegion>
+        </apex:pageBlock>
+        </apex:outputPanel>
+         <apex:actionFunction name="renderInputFields" status="processingStatus" action="{!populateFields}" reRender="inputFieldsPanel, updatePanel, msgPanel, resultsPanel" >
+             <apex:param name="recId" value="" assignTo="{!recordInputCapture['Id']}"/>
+         </apex:actionFunction>
+         <apex:actionFunction name="populateReferenceFields" status="processingStatus" action="{!populateReferenceFields}" reRender="inputFieldsPanel, updatePanel, msgPanel, resultsPanel" >
+             <apex:param name="refId" value="" assignTo="{!refId}"/>
+             <apex:param name="fdName" value="" assignTo="{!refObjectField}"/>
+         </apex:actionFunction>
+         <apex:actionFunction name="refreshRuleCriteria" action="{!ruleCriterias}" status="processingStatus" rerender="pbForm,msgPanel" />
+         
+    </apex:form>
+    <script> 
+        var isLookup = false;
+        $j=jQuery.noConflict();
+        $j(document).ready(function() {
+         $j('.cToDatePicker').datepicker();
+           showCrossObjectFieldInColor();            
+         });
+         
+         function showCrossObjectFieldInColor(){ 
+             $j('.cToDatePicker').datepicker();
+             $j('select[id*="choosefield"] option[value="CrossFormula"]').css("color", "red");
+              $j('select[id*="choosefield"] option[value^="GlobalVariable-"]').css("color", "red");
+              $j('.multiselect').multiselect({
+                  noneSelectedText: 'Select',
+                  selectedList: 4
+               });
+         }
+         
+         function openRecordLookup(){
+         	var url = '/_ui/common/data/LookupPage?lkfm=pg:pbForm&lknm=pg:pbForm:pbBlock:pbs:recName&lktp={!recKeyPrefix}';
+         	var recNameComp = document.getElementById('pg:pbForm:pbBlock:pbs:recName');
+         	if(recNameComp != null && recNameComp.value != null){
+         		url +='&lksrch=' + recNameComp.value;
+         	}
+         	openLookup(url);
+         	
+         }
+         
+         function searchSobject(){
+            var idComp = document.getElementById('pg:pbForm:pbBlock:pbs:recName_lkid');
+            var nameComp = document.getElementById('pg:pbForm:pbBlock:pbs:recName');
+            if(idComp != null && idComp.value != null && nameComp != null && nameComp.value != null && nameComp.value != ''){
+         		renderInputFields(idComp.value);
+         	}else{
+         		renderInputFields(null);
+         	}
+         }
+         
+         function populateReferenceFieldsJS(fdType ,fdName , fdComp){
+         	if(fdType == 'REFERENCE'){
+         		var idComp = document.getElementById(fdComp.id + '_lkid');
+         		if(idComp != null && idComp.value != null){
+         			populateReferenceFields(idComp.value,fdName);
+         		}
+         	}
+         }
+         
+         function lookupFocus(){
+        var aTag = document.getElementById('rule_lkwgt');
+        
+        
+        document.getElementById('rule_lkwgt').href = "javascript:OpenChildWindow('/apex/AW_RuleLookup')";
+    }
+
+    function OpenChildWindow(url){
+        var ruleNameComp = document.getElementById('pg:pbForm:pbBlock:pbs:ruleSec:ruleName');
+        url +='?objName={!workFlow.Object__c}';
+        if(ruleNameComp != null && ruleNameComp.Value != null){
+        	url += '&sText='+ruleNameComp.Value;
+        }
+        newwindow=window.open(url,'name','width=550,height=550,top=50,toolbar=no,personalbar=no,location=no,directories=no,statusbar=no,menubar=no,status=no,re sizable=yes,left=60,screenX=60,top=100,screenY=100');
+        if (window.focus){newwindow.focus()}
+    }
+    
+    function setPickValue(id,name){
+    	var ruleNameComp = document.getElementById('pg:pbForm:pbBlock:pbs:ruleSec:ruleName');
+    	var ruleIdComp = document.getElementById('pg:pbForm:pbBlock:pbs:ruleSec:ruleId');
+    	if(ruleIdComp != null){
+    		ruleIdComp.value = id;
+    	}
+    	if(ruleNameComp != null){
+    		ruleNameComp.value = name;
+    	}
+    	refreshRuleCriteria();
+    }
+    
+    function onChangeRule(){
+    	if(isLookup == false){
+    		OpenChildWindow('/apex/AW_RuleLookup');
+    	}else{
+    		isLookup = false;
+    	}
+    }
+    </script>   
+</apex:page>

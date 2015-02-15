@@ -1,0 +1,172 @@
+<!-- *********************************************************************************
+Name : AW_ExecutionHistory_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 14 Jul 2014
+Purpose : Custom  page to display Rule's History  to AWE
+********************************************************************************* -->
+<apex:page id="pg"  standardController="Advance_Workflow__c" extensions="AW_ExecutionHistoryController" docType="html-5.0">
+<title>Advance Workflow-Execution History</title>  
+<apex:sectionHeader subtitle="Advance Workflow History" title=" Rules Execution History"/>
+        
+<apex:form id="pbForm"> 
+    <apex:pagemessages id="pgmsg" />
+    
+    <apex:actionStatus id="eventStatus"  >
+         <apex:facet name="start">
+          <apex:outputPanel >
+                        <div style="width:100%;height:100%;position:absolute;top:0;left:0;">
+                            <div style="position:absolute;top:50%;left:50%">
+                                <apex:image value="/img/loading32.gif"></apex:image>
+                            </div>
+                        </div>
+           </apex:outputPanel>
+        </apex:facet>   
+    </apex:actionStatus>
+    <apex:pageblock title="History" id="pbBlock" >
+        <apex:pageblockbuttons >
+            <apex:commandButton value="Retrieve History" action="{!loadHistory}" reRender="pgmsg,historytable" status="eventStatus"  />         
+            <apex:commandButton value="Cancel" action="{!cancel}"/>
+        </apex:pageblockbuttons>
+        
+        <apex:pageblocksection columns="1">
+            <apex:selectRadio value="{!historyBy}" onchange="showfilter(this.value);"> 
+                <apex:selectOption itemValue="historybytime" itemLabel="History by Specific TransactionTime"/>
+                <apex:selectOption itemValue="historybyrecord" itemLabel="History by Specific Record "/>
+                <apex:selectOption itemValue="historybyobject" itemLabel="History by Object"/>
+                <apex:selectOption itemValue="historybyrule" itemLabel="History by Rule"/>
+            </apex:selectRadio>
+        </apex:pageblocksection>
+      
+        
+        <apex:outputpanel id="filters">
+        <apex:pageblocksection rendered="{!NOT(ISNULL(historyBy))}" columns="1"  id="pbs">  
+        
+            <apex:pageblocksectionitem rendered="{!historyBy=='historybytime'}" >
+                <apex:outputlabel >Enter Time Stamp</apex:outputlabel>
+                <apex:inputText value="{!filterValue}" />
+            </apex:pageblocksectionitem>
+            
+            <apex:pageblocksectionitem id="pbsi" rendered="{!historyBy=='historybyrecord'}" >
+            <apex:outputlabel >Select Record</apex:outputlabel>
+                <Apex:panelgroup id="pggrp">
+                <apex:inputHidden id="recName_lkid" value="{!filterValue}"  />
+                <apex:inputText id="recName" value="{!recordCaptureName}" />
+                <apex:inputHidden id="recName_lspfsub" />
+                <apex:inputHidden id="recName_lkold" />
+                <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="recName_lkwgt" href="javascript:openRecordLookup();">
+                        <img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+                </a></Apex:panelgroup>
+            </apex:pageblocksectionitem>
+            
+            <apex:pageblocksectionitem rendered="{!historyBy=='historybyobject'}" >
+                <apex:outputlabel >Select Object</apex:outputlabel>
+                <!--  <apex:selectList id="chooseObject" value="{!filterValue}"  size="1" multiselect="false">
+                    <apex:selectOptions value="{!objOptions}"/>
+                </apex:selectList> -->
+                <apex:outputText value="{!objectName}" /> 
+            </apex:pageblocksectionitem> 
+            
+            
+            <apex:pageblocksectionitem id="pbsi_rule" rendered="{!historyBy=='historybyrule'}" >
+                <apex:outputlabel >Select Rule</apex:outputlabel>
+                <Apex:panelgroup id="pggrp1">
+                <apex:inputHidden id="rulerecName_lkid" value="{!filterValue}"  />
+                <apex:inputText id="rulerecName" value="{!recordCaptureName}" />
+                <apex:inputHidden id="rulerecName_lspfsub" />
+                <apex:inputHidden id="rulerecName_lkold" />
+                <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="rulerecName_lkwgt" href="javascript:openRecordLookup2();">
+                        <img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+                </a></Apex:panelgroup>
+            </apex:pageblocksectionitem> 
+               
+            <apex:input value="{!StartDate}" type="auto" label="From : "/>
+            <apex:input value="{!EndDate}" type="auto" label="To : "/>
+           
+        </apex:pageblocksection>
+        </apex:outputpanel>
+        
+         
+        <apex:actionfunction name="showfilter" action="{!initfilters}" rerender="pgmsg,filters" status="eventStatus">
+            <apex:param name="historyfilter" value="" />
+        </apex:actionfunction>
+        
+    </apex:pageblock>   
+    
+    <apex:outputpanel id="historytable"  >
+    <apex:pageblock rendered="{!NOT(ISNULL(history)) && history.size >0}" title="Execution History ">               
+        <apex:pageblockbuttons >
+                   
+             <apex:commandLink value="Export To CSV" action="{!exportToCSV}" styleClass="btn" immediate="true" onclick="popUpMessage();"
+                target="_blank" style="text-decoration:none" />
+        </apex:pageblockbuttons>
+                    <apex:pageblocktable var="h" value="{!history}" rendered="{!history.size >0 }">                         
+                        <apex:column headerValue="">
+                            <a href="{!URLFOR($Action.Rule_Execution_History__c.view, h.id)}" >
+                                View
+                            </a>  
+                        </apex:column>          
+                        <apex:column headerValue="Record Name">
+                            <a href="/{!h.Record_ID__c}" >
+                                {!h.Record_Name__c}
+                            </a>
+                        </apex:column>
+                        <apex:column value="{!h.Record_After_Action_Applied__c}" /> 
+                        <apex:column headerValue="Rule">
+                            <a href="{!URLFOR($Page.AW_RuleDetail_VF)}?id={!h.rule__c}" >
+                                {!h.rulename__c}
+                            </a>
+                        </apex:column>                      
+                        <apex:column value="{!h.Rule_Version__c}" />                                                                                            
+                        <apex:column value="{!h.Rule_Execution_Status__c}" />  
+                        <apex:column value="{!h.CreatedDate}" />                        
+                    </apex:pageblocktable>                  
+                    <apex:panelGrid columns="7">
+                    <apex:commandButton status="eventStatus" reRender="historytable" value="|<" action="{!setCon.first}" disabled="{!!setCon.hasPrevious}" title="First Page"/>
+                    <apex:commandButton status="eventStatus" reRender="historytable" value="<" action="{!setCon.previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/>
+                    <apex:commandButton status="eventStatus" reRender="historytable" value=">" action="{!setCon.next}" disabled="{!!setCon.hasNext}" title="Next Page"/>
+                    <apex:commandButton status="eventStatus" reRender="historytable" value=">|" action="{!setCon.last}" disabled="{!!setCon.hasNext}" title="Last Page"/>
+                    <apex:outputText >{!(setCon.pageNumber * size)+1-size}-{!IF((setCon.pageNumber * size)>noOfRecords, noOfRecords,(setCon.pageNumber * size))} of {!noOfRecords}</apex:outputText>
+                    
+                </apex:panelGrid>           
+   </apex:pageblock>
+        
+    </apex:outputpanel>                     
+</apex:form> 
+ <Script>
+ function openRecordLookup(){
+
+         var url = '/_ui/common/data/LookupPage?lkfm=pg:pbForm&lknm=pg:pbForm:pbBlock:pbs:pbsi:recName&lktp={!recKeyPrefix}';
+
+         var recNameComp = document.getElementById('pg:pbForm:pbBlock:pbs:pbsi:recName');
+
+         if(recNameComp != null && recNameComp.value != null){
+
+         url +='&lksrch=' + recNameComp.value;
+
+         }
+
+         openLookup(url);
+}
+
+function openRecordLookup2(){
+
+         var url = '/_ui/common/data/LookupPage?lkfm=pg:pbForm&lknm=pg:pbForm:pbBlock:pbs:pbsi_rule:rulerecName&lktp={!ruleKeyPrefix}';
+
+         var recNameComp = document.getElementById('pg:pbForm:pbBlock:pbs:pbsi_rule:rulerecName');
+
+         if(recNameComp != null && recNameComp.value != null){
+
+         url +='&lksrch=' + recNameComp.value;
+
+         }
+
+         openLookup(url);
+}
+
+function popUpMessage(){
+             alert('The csv will have recent 10,000 History records');
+            
+}
+ </Script>
+ 
+</apex:page>

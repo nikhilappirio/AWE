@@ -1,0 +1,17 @@
+<apex:page sidebar="false" showHeader="false" controller="AW_AdvanceWorkflowExportResultController">
+	<apex:form >			
+		<apex:pageBlock id="pgb1" title="Export results">		
+            <apex:pageBlockSection >
+				<apex:outputPanel rendered="{!success}">
+					Export process successfully completed!
+				</apex:outputPanel>
+				<apex:outputPanel rendered="{!NOT(success)}">
+					Export process failed!
+				</apex:outputPanel>	 
+			</apex:pageBlockSection>  
+			<apex:pageBlockSection >
+                <apex:commandButton action="{!back}" value="Back"/>			
+			</apex:pageBlockSection>         	
+        </apex:pageBlock>
+    </apex:form>  
+</apex:page>

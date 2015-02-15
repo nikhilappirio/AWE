@@ -1,0 +1,207 @@
+<apex:page standardController="RuleCriteria__c" extensions="AW_EnhancedRuleCriteriaController"   >  
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-1.8.3.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-ui.min.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery.multiselect.js')}"/>
+
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery-ui.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery.multiselect.css')}"/>
+<style>
+ .popupBackground { 
+            background-color:black;
+            opacity: 0.20;
+            filter: alpha(opacity = 20);
+            width: 100%; 
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 998;
+            position: absolute;
+   }
+   
+  .popupPanel {
+      border: solid 1px;
+      background-color: white;
+      left: 50%;
+      width: 200px;
+      margin-left: -100px;
+      top: 50%;
+      height: 50px;
+      margin-top: -25px;
+      z-index: 999;
+      position:fixed;
+  }  
+</style>
+<apex:sectionheader title="Manage Rule Criteria and Filter Logic" subtitle="{!RuleRecord.Name}" />
+<!-- "Loading" or "Processing" popup --->
+    <apex:actionStatus id="processingStatus" stopText="" >
+        <apex:facet name="start">
+            <div>
+                <div class="popupBackground" />
+                <div class="popupPanel">
+                    <table border="0" width="100%" height="100%">
+                        <tr>
+                            <td align="center" style="font-family: Calibri; font-size: 13px; font-weight: normal;"><b>Processing... Please Wait</b></td>
+                        </tr>
+                        <tr>
+                            <td align="center"><img src="/img/loading.gif"/></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </apex:facet>
+    </apex:actionStatus>
+<apex:form id="pform" >
+    <apex:pageBlock title="Manage Criteria for rule {!RuleRecord.Name}"  >
+        <apex:pagemessages id="messages" />
+        <apex:pageblockButtons >
+                 <apex:commandButton value="Save"   action="{!save}"/>
+                  <apex:commandButton title="cancel" value="Cancel"  action="{!Cancel}" />
+                 <apex:commandButton value="Verify Syntax" action="{!Validate}" status="processingStatus" reRender="messages" oncomplete="showCrossObjectFieldInColor();"  />
+        </apex:pageblockButtons>
+       <apex:actionRegion >
+             <apex:actionFunction name="fieldNamesList" action="{!populateFields}"  status="processingStatus"  reRender="filterPanel" oncomplete="showCrossObjectFieldInColor();" >
+                  <apex:param name="objtype" value="" assignTo="{!parentObj}"/>
+                  <apex:param name="Index" value="" assignTo="{!index1}"/> 
+             </apex:actionFunction>
+       </apex:actionRegion>
+       
+       <apex:actionRegion >
+             <apex:actionFunction name="ToggleBetween" action="{!togglebtw}"  status="processingStatus"  reRender="filterPanel" oncomplete="showCrossObjectFieldInColor();" >
+                  <apex:param name="parentOperator" value="" assignTo="{!parentOperator}"/>
+                  <apex:param name="Index2" value="" assignTo="{!index}"/>
+             </apex:actionFunction>
+         </apex:actionRegion>
+         <apex:actionRegion >
+             <apex:actionFunction name="renderOperator" action="{!populateOperator}"  status="processingStatus"  reRender="filterPanel" oncomplete="showCrossObjectFieldInColor();" >
+                  <apex:param name="parentField" value="" assignTo="{!parentField}"/>
+                  <apex:param name="Inde" value="" assignTo="{!index}"/>
+             </apex:actionFunction>
+             <apex:actionFunction name="renderOnly" action="{!renderOnly}"  status="processingStatus" reRender="filterPanel" >
+                  <apex:param name="parentField" value="" assignTo="{!parentField}"/>
+                  <apex:param name="Inde" value="" assignTo="{!index}"/>
+              </apex:actionFunction>
+              <apex:actionFunction name="populateOwnerName" action="{!populateOwnerName}"  status="processingStatus" reRender="filterPanel" >
+                  <apex:param name="parentField" value="" assignTo="{!parentField}"/>
+                  <apex:param name="Inde" value="" assignTo="{!index}"/>
+                  <apex:param name="ownId" value="" assignTo="{!ownerId}"/>
+              </apex:actionFunction>
+         </apex:actionRegion>
+        
+         <apex:pageblocksection id="CommandBox" title="Filter Logic" columns="1">
+             
+                  <apex:panelGroup >Filter Logic &nbsp;:&nbsp;<apex:inputfield label=""  style="width:92%;" value="{!RuleRecord.Filter_Logic__c}"  id="Criteria"/></apex:panelGroup>
+                  
+          </apex:pageblocksection>   
+         
+         
+         <apex:pageblocksection id="filterPanel" title="Rule Criteria" columns="1">
+                 <apex:variable value="{!1}" var="Counter" />
+                  <apex:pageBlockTable value="{!FilterWrapper}" var="fw" width="100%"  rendered="{!FilterWrapper.size >0}"  >
+                    <apex:column headerValue="S.No" width="10%"> 
+                        <label class="span1"><span class="badge badge-important" width="10%"><apex:outputText value="{!Counter}"/></span></label><apex:variable value="{!Counter+1}" var="Counter" />
+                    </apex:column>
+                    <apex:column headerValue="Related Object">
+                         <apex:selectList id="Chooseobj" value="{!fw.newRuleCriteria.Related_Object__c}" size="1" rendered="true"  style=" width:225px;" styleClass="input-medium span2"  onchange="fieldNamesList(this.options[this.selectedIndex].value,this.id)">
+                              <apex:selectOptions value="{!objOptions}"></apex:selectOptions>
+                         </apex:selectList>
+                    </apex:column>
+                    
+                     <apex:column headerValue="Field">
+                     <apex:selectList id="choosefield" value="{!fw.newRuleCriteria.Field_Name__c}" size="1"  rendered="true" style="if(this.options.value=='Cross Formula',color:red;,;)" styleClass="input-medium span3 changeColor" onchange="renderOperator(this.options[this.selectedIndex].value,this.id)">
+                        <apex:selectOptions value="{!fw.fieldOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                        <apex:outputPanel id="CFPanel">                                        
+                          <apex:inputField id="crossFormula" value="{!fw.newRuleCriteria.CrossFormula__c}" label="CrossFormula" rendered="{!fw.isCrossFormula}" onchange="renderOnly(this.value,this.id);return false;"/>                                                                                             
+                        </apex:outputPanel> 
+                    </apex:column>
+                    
+                      <apex:column headerValue="Operator">
+                          <apex:selectList id="operator" value="{!fw.newRuleCriteria.Matching_Type__c}" size="1" rendered="true" styleClass="input-medium span3"  onchange="ToggleBetween(this.options[this.selectedIndex].value,this.id)">
+                                 <apex:selectOptions value="{!fw.operators}"></apex:selectOptions>
+                             </apex:selectList>
+                     </apex:column>                                         
+                      <apex:column headerValue="Value">
+                         <apex:outputPanel id="Value" rendered="{!if(fw.isbetween,false,if(fw.isPicklist,false,if(fw.isBoolean,false,if(fw.newRuleCriteria.Matching_Type__c ='IsChanged' || fw.newRuleCriteria.Matching_Type__c ='Is Null' || fw.newRuleCriteria.Matching_Type__c ='IS NOT NULL' || fw.newRuleCriteria.Matching_Type__c ='Is Not Null',false,if(fw.isGlobalVariable ,false,if(fw.isOwnerField , false, true))))))}"  >
+                         
+                           <apex:inputField value="{!fw.newRuleCriteria.Matching_Value__c}" styleClass="input-medium span3"/>
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ValueCheckbox" rendered="{!if(fw.isbetween,false,if(fw.isPicklist,false,if(fw.isBoolean,true,false)))}"  >
+                           
+                           <apex:inputCheckbox value="{!fw.newRuleCriteria.Matching_Value__c}" styleClass="input-medium span3"/>
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ValuePicklist" rendered="{!if(fw.isbetween,false,if(fw.isPicklist,if(fw.ismultiselect,false,true),if(fw.isGlobalVariable,true,false)))}"  >
+                                 <apex:selectList id="chooseValue" value="{!fw.picklistvalues}" size="2" multiselect="true"  rendered="true" styleClass="input-medium span3 multiselect" >
+                                 <apex:selectOptions value="{!fw.ValueOption}"></apex:selectOptions>
+                                </apex:selectList>
+                       </apex:outputPanel>
+                       
+                       <apex:outputPanel id="ownerField" rendered="{!fw.isOwnerField}"  >
+                            <apex:inputField id="owner" value="{!fw.sobj['OwnerId']}" onchange="populateOwnerNameJS('ownerId',this.id);"/>
+                       </apex:outputPanel>
+                        
+                         <apex:outputPanel id="ValuePicklistMulti" rendered="{!if(fw.isbetween,false,if(fw.ismultiselect,true,false))}"  >
+                                   <apex:selectList id="chooseValueMulti" value="{!fw.picklistvalues}" size="2" multiselect="true"  rendered="true" styleClass="input-medium span3 multiselect" >
+                                <apex:selectOptions value="{!fw.ValueOption}"></apex:selectOptions>
+                                </apex:selectList>
+                       </apex:outputPanel>
+                       <apex:outputpanel id="ValueBetween" rendered="{!if(fw.isbetween,true,false)}">
+                           <apex:inputField value="{!fw.newRuleCriteria.Minimum_Value__c}" styleClass="input-medium span3"/>
+                            to
+                           <apex:inputField value="{!fw.newRuleCriteria.Maximum_Value__c}" styleClass="input-medium span3"/>
+                       </apex:outputpanel>
+                    </apex:column> 
+                     <apex:column headerValue="Evaluate Result">
+                         <apex:inputField id="evaluateResult" value="{!fw.newRuleCriteria.Evaluate_Criteria_Result_To__c}" />
+                     </apex:column>  
+                     
+                      <apex:column headerValue="Child Evaluation Operator">
+                         <apex:inputField id="evaluateResultOperator" value="{!fw.newRuleCriteria.Evaluate_ChildCriteria_Using__c}" />
+                     </apex:column>
+                      
+                    <apex:column headerValue="Action" >
+                    <apex:panelGrid columns="2">
+                     <apex:commandbutton value="+"   action="{!addmorefilter}"  rendered="{!if(FilterWrapper.size+1==Counter,true,false)}" rerender="filterPanel,CommandBox" oncomplete="showCrossObjectFieldInColor();" /> 
+                      <apex:commandbutton value="-"  rendered="{!if(fw.isdeleteable,true,false)}" action="{!deletefilter}" rerender="filterPanel,CommandBox"  oncomplete="showCrossObjectFieldInColor();" >
+                     
+                   <apex:param name="index" value="{!Counter}" assignTo="{!toremovecounter}" ></apex:param>
+                </apex:commandbutton> 
+                </apex:panelGrid>
+                    </apex:column>
+                </apex:pageBlockTable>
+                    <apex:outputPanel rendered="{!FilterWrapper.size=0}">No Criteria defined..<apex:commandbutton value="Add Criteria"   action="{!addmorefilter}"   rerender="filterPanel" oncomplete="showCrossObjectFieldInColor();" /> 
+</apex:outputPanel>   
+         </apex:pageblocksection>
+ 
+        
+    </apex:pageBlock>
+</apex:form>
+ <script>
+         function getMultiselectFn(){
+             debugger;
+             if(typeof(jQuery)!='undefined' && typeof(jQuery('.multiselect').multiselect) =='function'){
+                 return jQuery('.multiselect');
+             }
+             if(typeof($jR)!='undefined' && typeof($jR('.multiselect').multiselect) =='function'){             
+                 return $jR('.multiselect');
+             }
+        }
+        
+        $jR=jQuery.noConflict(true);
+        $jR(document).ready(function() {
+           showCrossObjectFieldInColor();
+           
+         });
+         
+         function showCrossObjectFieldInColor(){
+             $jR('select[id*="choosefield"] option[value="CrossFormula"]').css("color", "red");
+              $jR('select[id*="choosefield"] option[value^="GlobalVariable-"]').css("color", "red");
+               var Fn = getMultiselectFn();
+               Fn.multiselect({
+                  noneSelectedText: 'Select',
+                  selectedList: 4
+               });
+         }
+    </script>   
+</apex:page>

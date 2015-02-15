@@ -1,0 +1,131 @@
+<apex:page standardController="RuleCriteria__c" extensions="AW_RuleCriteriaController" >
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>       
+   <apex:form >
+   <apex:sectionHeader subtitle="{!IF(edit,newRuleCriteria.Name, 'New Rule Criteria')}" title="Rule Criteria Detail"/>
+   <apex:pagemessages />
+     <apex:pageBlock title="Rule Criteria Detail">
+         <apex:pageBlockButtons >
+             <apex:commandButton value="Save" action="{!saveRuleCriteria}"/>
+             <apex:commandButton value="Save and New" action="{!saveAndNewRuleCriteria}"/>
+             <apex:commandButton value="Cancel" action="{!cancel}"/>
+         </apex:pageBlockButtons>
+         <apex:pageBlockSection title="Information" columns="2">
+         
+               <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Related Object"></apex:outputLabel>
+                         <apex:selectList value="{!objType}" size="1" onchange="fieldNamesList(this.options[this.selectedIndex].value);">
+                             <apex:selectOptions value="{!objOptions}"/>
+                         </apex:selectList>
+                 </apex:pageBlockSectionItem>
+                 
+                <apex:inputField value="{!newRuleCriteria.Rule__c}"/>
+                
+               
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Field Name"></apex:outputLabel>
+                        <apex:panelGroup >
+                         <apex:outputPanel id="fieldPanel"> 
+                             <apex:outputPanel layout="block" styleClass="requiredInput">
+                                <apex:outputPanel layout="block" styleClass="requiredBlock"/>
+                             <apex:selectList value="{!fieldType}" size="1" onchange="setFieldApiName(this.options[this.selectedIndex].value)">
+                                 <apex:selectOptions value="{!fieldOption}"/>
+                             </apex:selectList>
+                             </apex:outputPanel>
+                          </apex:outputPanel> 
+                            <apex:outputPanel id="CFPanel">                                        
+                         <apex:inputField value="{!newRuleCriteria.CrossFormula__c}" rendered="{!isCrossFormula}"/>                    
+                        </apex:outputPanel> 
+                        </apex:panelGroup>      
+                     </apex:pageBlockSectionItem>
+
+                    
+                 
+                 <apex:pageBlockSectionItem >
+                     <apex:outputLabel value="Rule Object Type"></apex:outputLabel>
+                    <apex:outputLabel id="objectTypeId" value="{!ruleObjType}" />
+                 </apex:pageBlockSectionItem>
+                 
+                 <!-- <apex:inputField value="{!newRuleCriteria.Matching_Type__c}"/> -->
+                 <apex:pageBlockSectionItem >
+                         <apex:outputLabel value="Operator"></apex:outputLabel>
+                         <apex:selectList onchange="setOperator(this.options[this.selectedIndex].value)" id="Operator" value="{!newRuleCriteria.Matching_Type__c}" size="1" title="Operator">
+                            <apex:selectOptions value="{!FieldOperators}"></apex:selectOptions>
+                        </apex:selectList>
+                  </apex:pageBlockSectionItem>     
+                     
+                 
+                 <apex:pageBlockSectionItem >
+                  <apex:outputLabel value="Field Api Name"></apex:outputLabel>
+                         <apex:outputPanel id="fieldApiPanel"> 
+                             <apex:outputField value="{!newRuleCriteria.Field_API_Name__c}"/>
+                          </apex:outputPanel>
+                 </apex:pageBlockSectionItem>  
+                 
+
+
+                 <!--<apex:inputField value="{!newRuleCriteria.Matching_Value__c}"/>-->
+                    
+                 <apex:pageBlockSectionItem >
+                  <apex:outputLabel value="Field Type"></apex:outputLabel>
+                         <apex:outputPanel id="fieldTypeApiPanel"> 
+                             <apex:outputField value="{!newRuleCriteria.Field_Type__c}"/>
+                          </apex:outputPanel>
+                 </apex:pageBlockSectionItem>  
+                 
+                 <!--<apex:inputField value="{!newRuleCriteria.Field_Type__c}"/> -->
+
+
+
+
+
+                  
+                   <apex:inputField value="{!newRuleCriteria.Field_Relation__c}"/>
+
+
+
+         </apex:pageBlockSection>
+          
+          <apex:pageBlockSection id="PicklistValues">
+          <apex:inputField value="{!newRuleCriteria.Matching_Value__c}" rendered="{!isInput && NOT(isMinMax)}" />
+                        <apex:inputCheckbox value="{!newRuleCriteria.Matching_Value__c}" rendered="{!isCheckbox && NOT(isMinMax)}" /> 
+                        <apex:selectList value="{!newRuleCriteria.Matching_Value__c}" size="1"  rendered="{!isPicklist && NOT(isMinMax)}">
+                            <apex:selectOptions value="{!PickListValues}"/>                            
+                        </apex:selectList>
+          </apex:pageBlockSection> 
+             
+         
+         <apex:pageBlockSection id="MinMax">
+         
+                   <apex:inputField rendered="{!isMinMax}" value="{!newRuleCriteria.Minimum_Value__c}"/>                
+                   <apex:inputField rendered="{!isMinMax}" value="{!newRuleCriteria.Maximum_Value__c}"/>
+                  </apex:pageBlockSection> 
+     </apex:pageBlock>
+     <apex:actionRegion >
+       <apex:actionFunction name="fieldNamesList" action="{!getFieldNames}" reRender="fieldPanel">
+        <apex:param assignTo="{!parentName}" value="" name="parentName"/>
+        </apex:actionFunction>
+     </apex:actionRegion>
+     <apex:actionRegion >
+       <apex:actionFunction name="setRuleType" reRender="objectTypeId"/>
+     </apex:actionRegion>  
+     <apex:actionRegion >  
+       <apex:actionFunction name="setFieldApiName" action="{!setFieldApiName}" reRender="fieldApiPanel,fieldTypeApiPanel,Operator,PicklistValues,CFPanel">
+        <apex:param assignTo="{!fieldType}" value="" name="fieldName"/>
+       </apex:actionFunction> 
+       <apex:actionFunction name="setOperator" action="{!setOperator}" reRender="MinMax,PicklistValues">
+           <apex:param value="" name="fieldOperator"/>
+       </apex:actionFunction>   
+     </apex:actionRegion>
+ </apex:form> 
+    <script>
+        $j=jQuery.noConflict();
+        $j(document).ready(function() {
+           showCrossFormulaFieldInColor();
+           
+         });
+         
+         function showCrossFormulaFieldInColor(){
+             $j('select[id*="fieldSelectionList"] option[value="CrossFormula"]').css("color", "red");
+         }
+    </script> 
+</apex:page>

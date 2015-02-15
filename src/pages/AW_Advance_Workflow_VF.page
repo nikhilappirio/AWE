@@ -1,0 +1,49 @@
+<!-- *********************************************************************************
+Name : AW_Advance_Workflow_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 19 Oct 2012
+Purpose : Custom  page to create/update Workflows
+********************************************************************************* -->
+<apex:page standardController="Advance_Workflow__c" extensions="AW_Advance_WorkflowController" tabstyle="Advance_Workflow__c" >
+	<apex:form id="theFrm">
+		<apex:sectionHeader subtitle="{!IF(edit,newruleexecutionplan.Name, 'New Rule Execution Plan')}" title="Advance Workflow Edit"/>
+		<apex:pageMessages />
+		<apex:pageBlock title="Define Advance Workflow" mode="edit">
+			<apex:pageBlockButtons >
+				<apex:commandButton value="Save" action="{!saveRule}"/>
+				<apex:commandButton value="Save and New" action="{!saveAndNewRule}"/>
+				<apex:commandButton value="Cancel" action="{!cancel}"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection title="Information" columns="1">
+				<apex:inputField value="{!newruleexecutionplan.name}" required="True" rendered="{!NOT(ruleAssigned && newruleexecutionplan.Enabled__c)}"/>
+				<apex:outputField value="{!newruleexecutionplan.name}" rendered="{!(ruleAssigned && newruleexecutionplan.Enabled__c)}"/>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Description"></apex:outputLabel>
+					<apex:outputpanel >
+						<apex:outputPanel layout="block" styleClass="requiredInput" rendered="{!NOT(ruleAssigned && newruleexecutionplan.Enabled__c)}">
+							<apex:outputPanel layout="block" styleClass="requiredBlock"/>
+							<apex:inputTextarea id="Descr" value="{!newruleexecutionplan.Description__c}" required="True" rows="3" cols="80"  richText="False" />
+						</apex:outputPanel>
+						<apex:outputField value="{!newruleexecutionplan.Description__c}" rendered="{!(ruleAssigned && newruleexecutionplan.Enabled__c)}"></apex:outputField>
+					</apex:outputpanel>
+				</apex:pageBlockSectionItem> 
+                <apex:pageBlockSectionItem >
+					<apex:outputLabel value="Object"></apex:outputLabel>
+					<apex:outputpanel >
+						<apex:outputPanel layout="block" styleClass="requiredInput" rendered="{!NOT(ruleAssigned && newruleexecutionplan.Enabled__c)}">
+							<apex:outputPanel layout="block" styleClass="requiredBlock"/>
+							<apex:selectList value="{!obj}" size="1">
+								<apex:selectOptions value="{!objOptions}"/>
+							</apex:selectList>
+						</apex:outputPanel>
+						<apex:outputField value="{!newruleexecutionplan.Object__c}" rendered="{!(ruleAssigned && newruleexecutionplan.Enabled__c)}"></apex:outputField>
+					</apex:outputpanel>
+				</apex:pageBlockSectionItem>
+			 	<apex:outputField value="{!newruleExecutionPlan.CountRulesassociatedtoAdvanceWorkflow__c}"></apex:outputField>
+				<apex:inputField value="{!newruleexecutionplan.Advance_Rule_Stamp__c}"/>
+				<apex:inputField value="{!newruleexecutionplan.Enable_Execution_History__c}"/>
+				<apex:inputField value="{!newruleexecutionplan.Enabled__c}"/>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

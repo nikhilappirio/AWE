@@ -1,0 +1,70 @@
+<apex:page standardController="Rule__c" extensions="AW_RuleController" tabstyle="Rule__c">
+ <apex:form >
+ <apex:sectionHeader subtitle="{!IF(edit,newRule.Name, 'New Rule')}" title="Rule Edit"/>
+ <apex:pageMessages />
+     <apex:pageBlock title="Rule Edit" mode="maindetail">
+         <apex:pageBlockButtons >
+             <apex:commandButton value="Save" action="{!saveRule}"/>
+             <apex:commandButton value="Save and New" action="{!saveAndNewRule}"/>
+             <apex:commandButton value="Cancel" action="{!cancel}"/>
+         </apex:pageBlockButtons>
+       
+         <apex:pageBlockSection title="Information" columns="1">
+              
+              <apex:inputField value="{!newrule.name}" required="True" rendered="{!(editrule)}"/>
+              <apex:outputField value="{!newrule.name}"  rendered="{!(!editrule)}"/>
+     
+               <apex:outputField value="{!newrule.Version__c}"   />
+   
+               
+                <apex:pageBlockSectionItem rendered="{!(editdescr)}">
+                  <apex:outputLabel value="Description"></apex:outputLabel>
+                  <apex:outputPanel layout="block" styleClass="requiredInput">
+                  <apex:outputPanel layout="block" styleClass="requiredBlock"/>
+                  <apex:inputTextarea id="Descr" value="{!Descr}" rows="3" cols="80"  richText="False" />
+                  </apex:outputPanel>
+              </apex:pageBlockSectionItem>
+              <apex:outputField value="{!newrule.Description__c}"  rendered="{!(!editdescr)}"/>
+           
+           
+               <apex:pageBlockSectionItem rendered="{!(editobject)}">
+                  <apex:outputLabel value="Object"></apex:outputLabel>
+                  <apex:outputPanel layout="block" styleClass="requiredInput">
+                  <apex:outputPanel layout="block" styleClass="requiredBlock"/>
+                  <apex:selectList value="{!objType}" size="1">
+                      <apex:selectOptions value="{!objOptions}"/>
+                  </apex:selectList>
+                  </apex:outputPanel>
+                  
+              </apex:pageBlockSectionItem>
+              <apex:outputField value="{!newrule.Object__c}"  rendered="{!(!editobject)}"/>
+          
+              <!---->  
+              <apex:pageBlockSectionItem rendered="{!(editevalrule)}">
+                  <apex:outputLabel value="Evaluation Rule"></apex:outputLabel>
+                  <apex:outputPanel layout="block" styleClass="requiredInput">
+                  <apex:outputPanel layout="block" styleClass="requiredBlock"/>
+                   <apex:selectList id="searchEvalRule" size="1" value="{!searchEvalRule}" >
+                      <apex:selectOptions value="{!EvalRule}"/>
+                  </apex:selectList>
+                  </apex:outputPanel>
+              </apex:pageBlockSectionItem>
+             <apex:outputField value="{!newrule.Evaluation_Rule__c}"  rendered="{!(!editevalrule)}"/>
+              
+              <apex:pageBlockSectionItem rendered="{!(edistatus)}">
+                  <apex:outputLabel value="Status"></apex:outputLabel>
+                  <apex:outputPanel layout="block" styleClass="requiredInput">
+                  <apex:outputPanel layout="block" styleClass="requiredBlock"/>
+                   <apex:selectList id="searchStatusRule" size="1" value="{!searchStatusRule}" >
+                      <apex:selectOptions value="{!StatusRule}"/>
+                  </apex:selectList>
+                  </apex:outputPanel>
+              </apex:pageBlockSectionItem>
+              
+               
+              <!-- apex:inputField value="{!newrule.Available__c}" rendered="{!((edit))}"/-->
+              
+         </apex:pageBlockSection>
+     </apex:pageBlock>
+ </apex:form>
+</apex:page>

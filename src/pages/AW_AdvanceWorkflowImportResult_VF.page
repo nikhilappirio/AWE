@@ -1,0 +1,41 @@
+<apex:page sidebar="false" showHeader="false" controller="AW_AdvanceWorkflowImportResultController">
+	<style> 
+	    .pbSubheader{
+	     	background-color: #0099FF !important;
+	     } 
+	     .bPageBlock{
+	     	border-top-color: #0066FF !important;
+	     
+	     }
+	     .errorLineStyle{
+	     	color: #CC0000 !important;
+	     }
+	     .errorNumberStyle{
+	     	color: #CC0000 !important;
+	     	font-weight: bold;
+	     }
+	     .successLineStyle{
+	     	color: #009933 !important;
+	     }	     
+	</style>
+	<apex:sectionHeader title="Import results" subtitle="Advance Workflow Rule"/>
+	<apex:form >				
+		<apex:pageBlock id="pgb1" title="Import/Export Menu">
+		    <apex:pageBlockButtons >
+                <apex:commandButton action="{!back}" value="back"/>
+            </apex:pageBlockButtons>	
+			<apex:pageBlockSection title="Upload Failed" collapsible="false" rendered="{!NOT(failures.empty)}">	
+				<apex:pageBlockTable value="{!failures}" var="fail">
+					<apex:column value="{!fail.ErrorSource__c}" styleClass="errorNumberStyle" headerValue="Name"/>	
+					<apex:column value="{!fail.Name}" styleClass="errorLineStyle" headerValue="Error Reference"/>	
+					<apex:column value="{!fail.Error_Description__c}" styleClass="errorLineStyle" headerValue="Error Description"/>			
+				</apex:pageBlockTable>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="Upload Successful" collapsible="false" rendered="{!NOT(success.empty)}">
+				<apex:pageBlockTable value="{!success}" var="suc">
+					<apex:column value="{!suc.Name}" styleClass="successLineStyle" headerValue="Rule Name"/>
+				</apex:pageBlockTable>				
+			</apex:pageBlockSection>			
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

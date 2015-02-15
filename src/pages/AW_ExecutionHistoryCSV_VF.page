@@ -1,0 +1,16 @@
+<!-- *********************************************************************************
+Name : AW_ExecutionHistroryCSV_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 19 Jul 2014
+Purpose : Custom  page to download history records in CSV file
+********************************************************************************* -->
+<apex:page controller="AW_ExecutionHistoryController" cache="true" 
+        contentType="text/csv#ExecutionHistory.csv" 
+        showHeader="false" sidebar="false" standardStylesheets="false">
+
+Record Name,Rule,Rule Version,Rule Execution Status,Created Date
+<apex:repeat value="{!allHistoryRecords}" var="h">
+"{!h.Record_Name__c}","{!h.RuleName__c}","{!h.Rule_Version__c}","{!h.Rule_Execution_Status__c}","{!h.CreatedDate}"
+</apex:repeat>
+
+</apex:page>

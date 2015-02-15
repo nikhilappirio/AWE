@@ -1,0 +1,117 @@
+<!-- *********************************************************************************
+Name : AW_VisualDisplay_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 20 Dec 2013
+Purpose : Custom  page to render AWE in a graph format
+********************************************************************************* -->
+<apex:page standardController="Advance_Workflow__c" sidebar="true"
+    showHeader="true" extensions="AW_VisualDisplayController">
+
+    <link rel="stylesheet"
+        href="{!URLFOR($Resource.AW_VisualUI,'css/style.css')}" />
+    <link rel="stylesheet"
+        href="{!URLFOR($Resource.AW_VisualUI,'css/jqueryui10.css')}" />
+    <script >
+    var imageRoot = "{!URLFOR($Resource.AW_VisualUI,'images/')}";
+    
+    </script>
+ 
+    <apex:includeScript value="{!URLFOR($Resource.AW_VisualUI,'js/jquery190.js')}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.AW_VisualUI,'js/jqueryui10.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.AW_VisualUI,'js/d31.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.AW_VisualUI,'js/d3.layout1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.AW_VisualUI,'js/flow.js')}"/> 
+     
+
+    <!-- to convert -->
+    <script type="text/javascript"
+        src="https://canvg.googlecode.com/svn/trunk/rgbcolor.js"></script>
+    <script type="text/javascript"
+        src="https://canvg.googlecode.com/svn/trunk/canvg.js"></script>
+    <script>
+            if typeOf($j) == 'undefined'{
+                     $j = jquery.noConflict()
+               }
+    </script>
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockButtons >
+                <a href="javascript:void(0);" onclick="exportGraph();" class="btn">Export
+                    Graph</a>
+                <apex:commandButton action="{!cancel}" immediate="true"
+                    value="Cancel" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection title="Information">
+                <apex:outputField value="{!Advance_Workflow__c.Name}" />
+                <apex:outputField value="{!Advance_Workflow__c.Object__c}" />
+                <apex:outputField value="{!Advance_Workflow__c.Enabled__c}" />
+                <apex:outputField value="{!Advance_Workflow__c.CountRulesassociatedtoAdvanceWorkflow__c}" />
+            </apex:pageBlockSection>
+
+            <apex:pageBlockSection title="Step and Actions" columns="1">
+                <div id="flowPlot"></div>
+            </apex:pageBlockSection>
+
+        </apex:pageBlock>
+
+    </apex:form>
+    <canvas id="svg-canvas" style="display: none;" width="1200"
+        height="800" />
+    <script>
+        $j(document).ready(function() {
+            $j('#flowPlot').rulesExceutionPlan({
+                width : 2200,
+                height : 600
+            });
+        });
+
+        function exportGraph() {
+            var canvas = document.getElementById('svg-canvas');
+            //  $container = $j('.canvasPanel <div>');
+            // content =$container.html().trim();
+            content = document.getElementsByClassName("canvasPanel")[0].innerHTML
+                    .trim();
+            // nickynine - to remove the div and to expose the svg htmls only
+            content = content.replace("<div>", "");
+            content = content.replace("</div>", "");
+            canvg(canvas, content, {
+                                ignoreMouse: true,
+                                ignoreAnimation: true,
+                                renderCallback: function() { exportImageFile(canvas) }
+                                }); 
+            
+    
+        
+
+        }
+        
+        function exportImageFile(canvas){
+            var searchString = window.location.search.substring(1), params = searchString
+                    .split("&"), hash = {};
+
+            for ( var i = 0; i < params.length; i++) {
+                var val = params[i].split("=");
+                hash[unescape(val[0])] = unescape(val[1]);
+            }
+            var theImage = canvas.toDataURL();  
+            var theImageBase64 = theImage.replace('data:image/png;base64,', '');
+            var controllerClass;
+            if(typeof AW_VisualDisplayController == 'undefined'){
+                  controllerClass = AWE.AW_VisualDisplayController
+            }
+            else{
+                 controllerClass = AW_VisualDisplayController;
+            }
+            controllerClass.attachBlob(hash['id'], 'Flow.png',
+                    'image/png', theImageBase64, function(result, error) {
+                        if (result) {
+                            alert('Graph exported & saved successfully');
+                        }
+                    });
+        
+        }
+    </script>
+
+</apex:page>

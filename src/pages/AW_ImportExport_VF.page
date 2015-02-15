@@ -1,0 +1,76 @@
+<apex:page id="pg" standardController="Advance_Workflow__c" sidebar="false" showHeader="false" extensions="AW_ImportExport_Controller">
+    <style> 
+        .pbSubheader{
+            background-color: #FF6633 !important; 
+         }  
+         .bPageBlock{
+            border-top-color: #FF9933 !important;
+         
+         }
+    </style>
+    <apex:sectionHeader title="Import/Export Process" subtitle="Advance Workflow Rule"/>        
+    <apex:pageMessages id="error"/>
+    
+    <apex:form id="frm">
+    	<apex:actionFunction name="checkChange" action="{!checkAction}"/>               
+        <apex:pageBlock id="pgb1" title="Import/Export Menu">       
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!cancel}" value="Cancel"/>
+                <apex:commandButton action="{!start}" disabled="{!NOT(initOption)}" value="Start"/>
+            </apex:pageBlockButtons>    
+            <apex:pageBlockSection title="Information" collapsible="false">     
+                <apex:panelGrid columns="1" id="theGrid">
+                    <apex:selectRadio layout="pageDirection" value="{!option}" onchange="checkChange()">
+                        <apex:selectOptions value="{!radioOptions}"/>
+                    </apex:selectRadio>             
+                </apex:panelGrid>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection id="functionArea" rendered="{!initOption}" columns="1">
+                <apex:outputPanel layout="block" rendered="{!chkImport}">
+                    <apex:inputFile value="{!xmlFile}" contentType="text/xml"/>                 
+                </apex:outputPanel>
+                <apex:outputPanel layout="block" rendered="{!NOT(chkImport)}">
+                    <apex:selectList value="{!ruleOpt}" size="1">
+                        <apex:selectOptions value="{!ruleOptions}"/>
+                    </apex:selectList>                      
+                </apex:outputPanel> 
+                <apex:outputPanel >
+                    <apex:selectList value="{!fileFormat}" size="1" onchange="showHideSample(this.value);">
+                        <apex:selectOptions value="{!FileFormatOptions}"/>
+                    </apex:selectList>&nbsp;&nbsp;&nbsp;
+	                   <a href="/apex/AW_SampleCSV" id="sampleLink" style="{IF(fileFormat == 'CSV' , 'display:' , 'display:none;')" >Sample CSV</a>
+                </apex:outputPanel>
+                <apex:outputPanel id="bulkMode" style="{IF(fileFormat == 'CSV' , 'display:' , 'display:none;')">
+                	<apex:inputCheckbox value="{!isBulkMode}" >Bulk Mode</apex:inputCheckbox>
+                 </apex:outputPanel>
+            </apex:pageBlockSection>            
+        </apex:pageBlock>
+        <script>
+        	function showHideSample(val){
+        		var aTag = document.getElementById('sampleLink');
+        		var cbTag = document.getElementById('pg:frm:pgb1:functionArea:bulkMode');
+        		if(aTag != null){
+        			if(val == 'CSV'){
+        				aTag.style.display = '';
+        			}else{
+        				aTag.style.display = 'none';
+        			} 
+        		}
+        		
+        		if(cbTag != null){
+        			if(val == 'CSV' && '{!chkImport}' == 'true'){
+        				cbTag.style.display = ''; 
+        			}else{ 
+        				cbTag.style.display = 'none';
+        			}
+        		}
+            }
+            
+            var cbTag = document.getElementById('pg:frm:pgb1:functionArea:bulkMode');
+            if(cbTag != null && '{!chkImport}' == 'false'){
+            	cbTag.style.display = 'none';
+            }
+            
+        </script>
+    </apex:form>
+</apex:page>

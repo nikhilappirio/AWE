@@ -1,0 +1,3 @@
+<apex:page standardController="Advance_Workflow__c" extensions="AW_ListRules" tabstyle="Advance_Workflow__c"  action="{!returnPage}"   >
+
+</apex:page>

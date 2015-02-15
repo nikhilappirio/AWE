@@ -1,0 +1,384 @@
+<apex:component controller="AW_GuideMeController">
+	<apex:attribute name="RootObjectFieldId" type="String" assignTo="{!RootObjectFieldIdAttr}" required="true"
+		description="The ID of the Field that contains the value for the Root sObject"/>
+	<apex:attribute name="FormulaFieldId" type="String" assignTo="{!FormulaFieldIdAttr}" required="true" 
+		description="The ID of the Field that the Formula will be written to"/>
+	<apex:attribute name="SelectElementSize" type="Integer" assignTo="{!SelectElementSizeAttr}" default="10" 
+		description="The number of visible rows in each Select Element"/>
+	<apex:attribute name="OpenPopupWithButton" type="Boolean" assignTo="{!OpenPopupWithButtonAttr}" default="true" 
+		description="Indicates how the Build Formula Component Popup will be opened (Button or Link)"/> 
+	
+	<!-- Reuseable JQuery UI Scripts and Stylesheets -->
+    
+       <apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-1.8.3.js')}"/>
+        <apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-ui.min.js')}"/>
+        <apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery-ui.css')}"/>
+	 
+	   	<!-- Launch Button or Link -->
+	<apex:commandButton id="openDialogButton" onclick="return false;" rendered="{!OpenPopupWithButtonAttr}" value="{!$Label.AW_GuideMeOpenDialog}"/>
+	<apex:commandLink id="openDialogLink" onclick="return false;" rendered="{!!OpenPopupWithButtonAttr}">{!$Label.AW_GuideMeOpenDialog}</apex:commandLink>
+	
+	<!-- Popup -->
+	<div id="popup" title="{!$Label.AW_GuideMePopupTitle}">
+		<div id="exceptionContainer" style="display:block; padding:5px; color:red;"/>
+		<div id="popupHeader" style="display:block; padding:5px;">{!$Label.AW_GuideMePopupHeader}</div>
+		<div id="container" style="display:block; border-style:solid; border-width:1px; padding:5px; overflow:auto; white-space: nowrap;">
+			<div id="selectContainer" style="display:inline-block; vertical-align:middle;"/>
+			<div id="formulaContainer" style="display:none; border-style:solid; border-width:1px; 
+				padding:10px; vertical-align:middle; text-align:center; margin-right:5px;">
+				<div>{!$Label.AW_GuideMeValue}</div>
+				<div id="formulaValue" style="font-weight:bold; display:inline-block; "/>
+				<div>
+					<apex:commandButton id="acceptFormulaButton" onclick="return false;" value="{!$Label.AW_GuideMeAccept}" style="margin:10px;"/>
+				</div>
+			</div>
+		</div>
+		<div id="popupButtons" style="text-align:center;">
+			<apex:commandButton id="closeDialogButton" onclick="return false;" value="{!$Label.AW_GuideMeCloseDialog}" style="margin:10px;"/>
+		</div>
+	</div>
+	
+	<!-- Component Scripts -->
+	<script type="text/javascript">
+	
+		//Constants
+		var CONTAINER_ID = "container";
+		var EXCEPTION_CONTAINER_ID = "exceptionContainer";
+		var SELECT_ID_PREFIX = "select:";
+		var SELECT_CONTAINER_ID = "selectContainer";
+		var SELECT_ELEMENT = "select";
+		var FORMULA_CONTAINER_ID = "formulaContainer";
+		var FORMULA_VALUE_ID = "formulaValue";
+		var FORMULA_PREFIX = "\u007B\u0021";
+		var FORMULA_SUFFIX = "\u007D";
+		var GREATER_THAN_SYMBOL = "\u0026gt;";
+		
+		//Global Variables
+		var formula = "";
+	
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @description  Initialises the JQueryUI Popup. Defines onclick actions for various buttons related to the
+	    *               Popup 
+	    **********************************************************************************************************/
+		$(function() {
+			
+			//Set Popup Parameters
+			var dialogWidth = $(window).width();
+        	dialogWidth = dialogWidth * 0.6;
+			$( "#popup" ).dialog({
+				autoOpen: false,
+				height: 'auto',
+				modal: true,
+				width: dialogWidth
+			 });
+			
+			//Open Popup Link
+			$($("[id$='openDialogLink']")).click(function() {
+				//Initialise the Popup using the value from the Root Object Field in the calling Page
+      			initialisePopup($($("[id$='{!RootObjectFieldIdAttr}']")).val());
+      			//Open the Popup
+      			$( "#popup" ).dialog( "open" );
+			});
+			
+			//Open Popup Button
+			$($("[id$='openDialogButton']")).click(function() {
+			//Initialise the Popup using the value from the Root Object Field in the calling Page
+      			initialisePopup($($("[id$='{!RootObjectFieldIdAttr}']")).val());
+      			//Open the Popup
+      			$( "#popup" ).dialog( "open" );
+			});
+			
+			//Close Popup Button
+			$($("[id$='closeDialogButton']")).click(function() {
+      			//Close the Popup
+      			$( "#popup" ).dialog( "close" );
+			});
+			
+			//Popup Accept Button
+			$($("[id$='acceptFormulaButton']")).click(function() {
+				//Set the Formula Field in the calling Page
+				if (formula.length > 0) {
+					$($("[id$='{!FormulaFieldIdAttr}']")).val(FORMULA_PREFIX + formula + FORMULA_SUFFIX);
+				} else {
+					$($("[id$='{!FormulaFieldIdAttr}']")).val("");
+				}
+				//Close the Popup
+      			$( "#popup" ).dialog( "close" );
+			});
+		});	
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String rootObjectName - The name of a valid sObject (e.g. Account)
+	    * @description  Initialises the Popup by clearing any exceptions, hiding the Formula Container and removing
+	    *               all Child Select Elements and populating the Root Select Element for the given Root sObject
+	    **********************************************************************************************************/
+		function initialisePopup(rootObjectName) {
+			//Clear any Exception Messages
+			clearExceptionMessages();
+			//Hide the "You have selected" Formula Container
+			hideContainer(FORMULA_CONTAINER_ID);
+			//Get the Select Container
+			var container = document.getElementById(SELECT_CONTAINER_ID);
+			//Remove any Select Elements from the popup 
+			removeSelectElements(container, 0);
+			//Create a Root Select Element
+			var rootSelect = createSelectElement(SELECT_ID_PREFIX + "0");
+			//Populate the Root Select Element
+			populateRootSelect(rootObjectName, rootSelect);
+			//Add Root Select Element to Container
+			container.appendChild(rootSelect);
+		}	
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String parentSelectId - The ID of the parent HTML SELECT tag
+	    * @description  Looks at the Selected Option on the Parent Select Element. If a Field has been selected 
+	    *               then calculate the Formula and show in the Formula Container DIV. If a Relationship then
+	    *               create a new Child Select Element and populate with Fields/Relationships for the related 
+	    *               sObject.
+	    **********************************************************************************************************/
+		function getChildSelectOptions(parentSelectId) {
+			
+			var parentSelect = document.getElementById(parentSelectId);
+			var parentSelectedLabel = parentSelect.options[parentSelect.selectedIndex].innerHTML;
+			var parentSelectedValue = parentSelect.options[parentSelect.selectedIndex].value;
+			var parentSelectIndex = parseInt(parentSelectId.substr(parentSelectId.indexOf(":") + 1));
+			var childSelectIndex = parentSelectIndex + 1;	
+			
+			//Clear any Exception Messages
+			clearExceptionMessages();
+			//Get the Select Container
+			var container = document.getElementById(SELECT_CONTAINER_ID);
+			//Remove any child Select Elements from the popup
+			removeSelectElements(container, childSelectIndex);
+			//Check the Parent Selected Label for a Greater Than symbol as this 
+			//indicates a relationship to another Object. 
+			if (parentSelectedLabel.indexOf(GREATER_THAN_SYMBOL) == -1) {
+				//Show the "You have selected" Formula Container
+				showContainer(FORMULA_CONTAINER_ID, "inline-block");
+			} else {
+				//Hide the "You have selected" Formula Container
+				hideContainer(FORMULA_CONTAINER_ID);
+				//Create a new Select Element
+				var childSelect = createSelectElement(SELECT_ID_PREFIX + childSelectIndex);
+				//Populate the Select Element
+				populateChildSelect(parentSelectedValue, childSelect);
+				//Add Select Element to Container
+				container.appendChild(childSelect);
+	        }
+	        //Recalculate Formula
+	        formula = calculateFormula();
+	        //Update the Formula value in the "You have selected" Panel 
+	        document.getElementById(FORMULA_VALUE_ID).innerHTML = formula;
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String rootObjectName - The name of a valid sObject (e.g. Account)
+	    * @param        DOM Element rootSelect - A reference to an HTML SELECT tag
+	    * @description  Makes a Remote Call to the VF Component Controller to return a list of Select Options for 
+	    *               the given sObject. The returned Select Options are added to the Root Select
+	    *               Element
+	    **********************************************************************************************************/
+		function populateRootSelect(rootObjectName, rootSelect) {
+			//Make a Remote Call to the VF Component Controller to return
+			//a list of Select Options for the root Select Element
+        	Visualforce.remoting.Manager.invokeAction(
+            	'{!$RemoteAction.AW_GuideMeController.getSelectOptions}',
+            	rootObjectName, 
+            	function(result, event){
+					if (event.status) {	
+						//Parse Result Array                
+						for(var i = 0; i < result.length; i++) {
+							var option = document.createElement("option");
+							option.innerHTML = result[i].Label;
+							option.value = result[i].Value;
+							rootSelect.appendChild(option);
+						}
+					} else if (event.type === "exception") {
+						document.getElementById(EXCEPTION_CONTAINER_ID).innerHTML = 
+							event.message + "<br/>\n<pre>" + event.where + "</pre>";
+					} else {
+						document.getElementById(EXCEPTION_CONTAINER_ID).innerHTML = event.message;
+					}
+            	}, 
+	            {escape: true}
+        	);
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String sObjectRelationship - A fully qualified sObject and relationship 
+	    *               (e.g. Account.CreatedBy)
+	    * @param        DOM Element childSelect - A reference to an HTML SELECT tag
+	    * @description  Makes a Remote Call to the VF Component Controller to return a list of Select Options for 
+	    *               the given sObject Relationship. The returned Select Options are added to the Child Select
+	    *               Element
+	    **********************************************************************************************************/
+		function populateChildSelect(sObjectRelationship, childSelect) {
+			//
+        	Visualforce.remoting.Manager.invokeAction(
+            	'{!$RemoteAction.AW_GuideMeController.getChildSelectOptions}',
+            	sObjectRelationship, 
+            	function(result, event){
+					if (event.status) {	
+						//Parse Result Array                
+						for(var i = 0; i < result.length; i++) {
+							var option = document.createElement("option");
+							option.innerHTML = result[i].Label;
+							option.value = result[i].Value;
+							childSelect.appendChild(option); 
+						}
+					} else if (event.type === "exception") {
+						document.getElementById(EXCEPTION_CONTAINER_ID).innerHTML = 
+							event.message + "<br/>\n<pre>" + event.where + "</pre>";
+					} else {
+						document.getElementById(EXCEPTION_CONTAINER_ID).innerHTML = event.message;
+					}
+            	}, 
+	            {escape: true}
+        	);
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String sObjectRelationship - The fully qualified sObject and relationship 
+	    *               (e.g. Account.CreatedBy)
+	    * @return       String - The relationship (e.g. CreatedBy) 
+	    * @description  Removes the sObject name prefix from the sObjectRelationship 
+	    **********************************************************************************************************/
+		function removeObjectPrefix(sObjectRelationship) {
+			//Remove the sObject name and dot prefix
+			return sObjectRelationship.substr(sObjectRelationship.indexOf(".") + 1);
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @description  Calculates a formula based on the selected options in each of the Select Elements
+	    **********************************************************************************************************/
+		function calculateFormula() {
+			//Initialise Formula
+			var formula = "";
+			//Initialise while loop variables
+			var selectIndex = 0;
+			var select = document.getElementById(SELECT_ID_PREFIX + selectIndex);
+			//Add each Selected Value
+			while (select != null && select.selectedIndex >= 0) {
+				if (selectIndex != 0) {
+					formula += "." + removeObjectPrefix(select.options[select.selectedIndex].value);
+				} else {
+					formula += removeObjectPrefix(select.options[select.selectedIndex].value);
+				}
+				selectIndex = selectIndex + 1;
+				select = document.getElementById(SELECT_ID_PREFIX + selectIndex);
+			}
+			return formula;
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String id - The ID that should be assigned to the new Select Element
+	    * @return       DOM Element - A new Select Element 
+	    * @description  Creates a new Select Element, sets the ID, size and onchange attributes. Returns a 
+	    *               reference to the new Select Element
+	    **********************************************************************************************************/
+		function createSelectElement(id) {
+			//Create a new Select Element
+			var select = document.createElement(SELECT_ELEMENT);
+			//Set Attributes
+			setAttribute(select, "id", id);
+			setAttribute(select, "size", "{!SelectElementSizeAttr}");
+			setAttribute(select, "onchange", "getChildSelectOptions(this.id)");
+			return select;	
+		}
+	
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        DOM Element select - A reference to an HTML SELECT tag
+	    * @description  Removes all select options from the given Select Element 
+	    **********************************************************************************************************/
+		function removeOptions(select) {
+			//Remove Options    
+			for(var i = select.options.length - 1; i >= 0; i--) {
+		        select.remove(i);
+		    }
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        DOM Element element - A reference to an Element in the DOM
+	    * @param        String name - The name of the attribute
+	    * @param        String value - The value of the attribute
+	    * @description  Adds an Attribute name/value to the given Element
+	    **********************************************************************************************************/
+		function setAttribute(element, name, value) {
+			//Add Attribute
+			var attribute = document.createAttribute(name);
+			attribute.value = value;
+			element.setAttributeNode(attribute);
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        DOM Element container - A reference to an HTML DIV tag holding the Select Elements
+	    * @param        Integer startIndex - The starting index for removing Select Elements
+	    * @description  Removes Select Elements starting from the specified index (0 = Minimum value) from the 
+	    *               given container 
+	    **********************************************************************************************************/
+		function removeSelectElements(container, startIndex) {
+			//Initialise while loop variables
+			var selectIndex = startIndex;	
+			var select = document.getElementById(SELECT_ID_PREFIX + selectIndex);
+			//Remove each Child Select Element
+			while (select != null) {
+				container.removeChild(select);
+				selectIndex = selectIndex + 1;
+				select = document.getElementById(SELECT_ID_PREFIX + selectIndex);
+			}
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String id - The ID of the container
+	    * @description  Hides the container identified using ID 
+	    **********************************************************************************************************/
+		function hideContainer(id) {
+			document.getElementById(id).style.display = "none";
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @param        String id - The ID of the container
+	    * @param        String displayStyle - The CSS display style for the container
+	    * @description  Applies the display style to the container identified using ID 
+	    **********************************************************************************************************/
+		function showContainer(id, displayStyle) {
+			document.getElementById(id).style.display = displayStyle;
+		}
+		
+	    /*********************************************************************************************************
+	    * @author       AutomaTom            
+	    * @date         31 December 2013 
+	    * @description  Removes all Exception messages from the the Exception Container DIV 
+	    **********************************************************************************************************/
+		function clearExceptionMessages() {
+			document.getElementById(EXCEPTION_CONTAINER_ID).innerHTML = "";
+		}
+		
+	</script>
+</apex:component>

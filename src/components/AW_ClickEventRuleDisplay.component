@@ -1,0 +1,62 @@
+<apex:component controller="AW_DynamicActionsHandler" allowDML="true">
+     <apex:attribute name="parentId" type="String" assignTo="{!recordId}" description="stores the record id in context" />
+     <apex:attribute name="rules" type="Rule__c[]" assignTo="{!ruleValid}" description="stores the rules that needs to be displayed" />
+{!Responses}
+<apex:form >
+<apex:pageBlock >
+    <apex:pageMessages id="messages"></apex:pageMessages>
+     <apex:pageBlockSection title="Options">
+         <apex:pageBlockSection columns="1" rendered="{!NOT(ISNULL(ruleValid)) && ruleValid.size > 0}">
+             <apex:repeat value="{!ruleValid}" var="rule">
+                 <apex:repeat value="{!rule.Rule_Actions__r}" var="action" >
+                     
+                     <apex:pageBlockSectionItem rendered="{!action.Type__c=='Load Iframe' || action.Type__c=='Canvas' || action.Type__c=='Load a VF Page'}">                         
+                           
+                          <apex:commandLink action="{!loadVFIframeOrCanvasAction}" value="{!action.Action_Label__c}" id="theCommandLink3" target="_blank">   
+									<apex:param name="actionId" value="{!action.Id}"  />             
+						  </apex:commandLink>
+                          
+                          <apex:outputLabel rendered="{!NOT(ISNULL(foundResponsesForAction[action.Id].response__c))}">
+                          		Response found :- <Apex:outPutField value=" {!foundResponsesForAction[action.Id].response__c}" />
+                          </apex:outputLabel>
+                     </apex:pageBlockSectionItem>
+                     
+                     
+                                        
+                    <apex:pageBlockSectionItem rendered="{!action.Type__c=='Attach Documents'}">
+                         <Apex:panelGroup >
+                         <apex:inputFile value="{!attachment.body}" filename="{!attachment.name}" id="file"/>
+                         <apex:commandLink action="{!upload}" value="Upload" id="theCommandLink1">   
+									<apex:param name="actionId2" value="{!action.Id}"  />             
+						</apex:commandLink> </Apex:panelGroup>
+						<apex:outputLabel rendered="{!NOT(ISNULL(foundResponsesForAction[action.Id].response__c))}">
+                          		Response found :-<Apex:outPutField value=" {!foundResponsesForAction[action.Id].response__c}" />
+                          </apex:outputLabel>
+                     </apex:pageBlockSectionItem>
+                     
+                     <apex:pageBlockSectionItem rendered="{!action.Type__c=='Chatter Notification'}">
+                         Notification Posted...Here is the response
+						<apex:outputLabel rendered="{!NOT(ISNULL(foundResponsesForAction[action.Id].response__c))}">
+                          		 :- <Apex:outPutField value=" {!foundResponsesForAction[action.Id].response__c}" />
+                          </apex:outputLabel>
+                     </apex:pageBlockSectionItem>
+
+                 </apex:repeat>
+             </apex:repeat>
+         </apex:pageBlockSection>
+         
+         <apex:outputPanel rendered="{!ISNULL(ruleValid) || ruleValid.size = 0}">
+             <apex:pageMessage severity="Info" strength="3">
+                Oops! None of the rule are available.
+             </apex:pageMessage>
+         </apex:outputPanel>
+         
+     </apex:pageBlockSection>
+     
+     <apex:pageBlockSection >
+     	
+     </apex:pageBlockSection>
+     
+     </apex:pageBlock>
+</apex:form>
+</apex:component>

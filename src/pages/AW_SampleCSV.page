@@ -1,0 +1,4 @@
+<apex:page controller="AW_SampleCSVController" contentType="text/csv#samplecsv.csv" 
+        showHeader="false" sidebar="false" standardStylesheets="false">
+{!csvBody}
+</apex:page>

@@ -1,0 +1,30 @@
+<apex:page standardController="Rule__c" extensions="AW_AssignRulesToWorkflowController" action="{!createRuleExecutionPlan}">
+	<apex:form >
+		<apex:sectionHeader subtitle="{!ruleName}" title="Add Rule to an Advance Workflow"/>
+		<apex:pageMessages />
+		<apex:pageBlock rendered="{!Not(availableRule)}">
+			<apex:pageBlockButtons location="top">
+                <apex:commandButton value="Back" action="{!Cancel}"/> 
+            </apex:pageBlockButtons>
+		</apex:pageBlock>
+		<apex:pageBlock rendered="{!availableRule}">
+			<apex:pageBlockButtons >
+				<apex:commandButton value="Save"  action="{!updateRule}" rendered="{!Not(enabledPlan)}"/> 
+                <apex:commandButton value="Cancel" action="{!Cancel}"/> 
+            </apex:pageBlockButtons>
+            <apex:pageBlockTable style="width:100%"   rendered="{!IF(NewRuleAssignmenttoExecutionPlan.size > 0,True,False)}" value="{!NewRuleAssignmenttoExecutionPlan}" var="RO">
+				<apex:column headerValue="Order" width="5%">
+					<apex:inputField value="{!RO.Order__c}" required="true"/>
+				</apex:column>
+                <apex:column headerValue="Rule Execution" width="5%"> 
+					<apex:selectList size="1" value="{!RO.Execution_Behavior__c}" >
+						<apex:selectOptions value="{!ExecutionBehavior}" />
+					</apex:selectList>
+				</apex:column>
+                <apex:column value="{!RO.Advance_Workflow__c}" width="5%"/>
+                <apex:column value="{!RO.Name}" width="5%"/>
+                <apex:column value="{!RO.DisplayfilterLogic__c}" width="20%"/>
+			</apex:pageBlockTable>   
+		</apex:pageBlock>  
+	</apex:form>
+</apex:page>

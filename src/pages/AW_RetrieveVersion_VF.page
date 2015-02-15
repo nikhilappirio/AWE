@@ -1,0 +1,13 @@
+<apex:page controller="AW_RetrieveVersionController"  id="pg"  action="{!retrieveRule}">
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-1.8.3.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.UI, 'jquery-ui.min.js')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.UI, 'jquery-ui.css')}"/> 
+<apex:form >
+<apex:pageMessages />
+      <apex:outputPanel rendered="{!isSuccess}" style="text-align:center;font-size:200%;"> 
+		The rule has been retrieve successfully. <br/>
+		<a href="/{!newRuleId}" >Rule Link</a>
+	</apex:outputPanel>
+	 <apex:commandButton rendered="{!!isSuccess}" value="Return to Workflow" action="{!returnToWorkflow}"/>
+</apex:form>
+</apex:page>

@@ -1,0 +1,6 @@
+<apex:page standardController="Account" extensions="AW_DynamicActionsHandler" action="{!EvaluateRulesOnClick}">
+  
+      
+  <c:AW_ClickEventRuleDisplay parentId="{!recordId}" rules="{!ruleValid}"></c:AW_ClickEventRuleDisplay>
+  
+</apex:page>

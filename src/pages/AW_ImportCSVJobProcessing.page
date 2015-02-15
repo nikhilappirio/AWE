@@ -1,0 +1,7 @@
+<apex:page controller="AW_ImportCSVJobProcessing">
+ <apex:pageMessages id="error"/>
+    
+    <apex:form >
+    	<apex:actionPoller action="{!jobProcessing}"  rerender="error" interval="20"/>
+    </apex:form>
+</apex:page>

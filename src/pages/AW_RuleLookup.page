@@ -1,0 +1,74 @@
+<apex:page controller="AW_RuleLookupController" id="pgL" showHeader="false">
+
+<body class="lookupTab"> 
+<div class="lookup">
+  <div class="bPageTitle">
+    <div class="ptBody secondaryPalette">
+      <div class="content">
+        <img title="" class="pageTitleIcon" alt="" src="/s.gif" />
+          <h1>Lookup</h1>
+      </div>
+    </div>
+
+  </div>
+</div>
+<font size="2" color="red" id="errorTd"></font>
+</body>
+
+<script>
+    function setParentParameter(id,name){
+     top.window.opener.setPickValue(id,name)
+     window.close();
+   
+   }
+   
+</script>
+<apex:form >
+<apex:outputPanel id="pb">
+    <apex:actionstatus startText="Please wait.." id="istatus"/><br/>
+    <apex:outputLabel for="name">search</apex:outputLabel>&nbsp;&nbsp;&nbsp;
+    <apex:inputText value="{!searchText}"/>
+    <apex:commandButton value="Go" onclick="goJS();return false;"/>
+</apex:outputPanel>
+<br/><br/> 
+<apex:outputPanel id="Idmsg">
+ <apex:messages style="color:#ff0000;" />
+</apex:outputPanel>
+<apex:pageBlock id="ruleBlock">
+    <apex:pageBlockTable value="{!searchedSobject}" var="sobj"  >
+    	<apex:repeat value="{!aweCustomLookupSettings}" var="fd">
+    		<apex:column rendered="{!fd.isName__c}">
+    		  <apex:facet name="header">Name</apex:facet>
+	          <apex:variable var="sObjId" value="{!sobj['Id']}" />
+	          <apex:variable var="sObjName" value="{!sobj[fd.Field_API_Name__c]}" />
+	          <apex:commandLink value="{!sobj[fd.Field_API_Name__c]}" onclick="setParentParameter('{!sObjId}','{!JSENCODE(sObjName)}');"  />
+	        </apex:column>
+	        <apex:column value="{!sobj[fd.Field_API_Name__c]}" rendered="{!!fd.isName__c}"/>
+    	</apex:repeat> 
+     </apex:pageBlockTable>
+    <br/>
+    <apex:outputLabel value="No Record Found" rendered="{!searchedSobject.size == 0}" />
+    <apex:outputPanel layout="block" styleClass="pSearchShowMore"
+		id="otpNav2" rendered="{!searchedSobject != null && searchedSobject.size > 0}">
+		<!--  Total Records Found: <apex:outputText rendered="{!IF(Con.resultSize==10000,true,false)}">10000 +</apex:outputText><apex:outputText rendered="{!IF(Con.resultSize < 10000,true,false)}">{!Con.resultSize}</apex:outputText>-->
+		<apex:image url="/img/search_prevarrow_disabled.gif"
+			rendered="{!NOT(hasPrevious)}" />
+		<apex:image url="/img/search_prevarrow.gif" title="Previous Page"
+			rendered="{!hasPrevious}" />&nbsp; 
+       		<apex:commandLink action="{!Previous}" title="Previous Page" status="goStatus"
+			value="Previous" rendered="{!hasPrevious}" 
+			rerender="fpList,otpNav2,script" />
+		<apex:outputPanel style="color:grey" rendered="{!NOT(hasPrevious)}">Previous</apex:outputPanel>
+     			&nbsp;({!IF(pageNumber == 1,1,((pageNumber -1) * pageSize)+1)}-{!IF(searchedSobject.size < PageSize,(((pageNumber -1) * pageSize) + searchedSobject.size),PageNumber * pageSize)})&nbsp;
+       		<apex:outputPanel style="color:grey" rendered="{!NOT(hasNext)}">Next</apex:outputPanel>
+		<apex:commandLink title="Next Page" value="Next" status="goStatus"
+			rendered="{!hasNext}" action="{!next}" rerender="fpList,otpNav2,script" />&nbsp;
+       		<apex:image url="/img/search_nextarrow.gif" title="Next Page"
+			rendered="{!hasNext}" />
+		<apex:image url="/img/search_nextarrow_disabled.gif"
+			rendered="{!NOT(hasNext)}" />
+	</apex:outputPanel>
+</apex:pageBlock>
+   <apex:actionFunction name="goJS" action="{!search}" rerender="ruleBlock" status="istatus" />
+</apex:form>
+</apex:page>

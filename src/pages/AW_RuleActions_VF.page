@@ -1,0 +1,564 @@
+<!--  
+(c) 2012 Appirio, Inc. 
+AW_RuleActions_VF                                                      
+This page is used for creating and editing Rule Actions
+10 Oct 2012     Peter Babalis     Original
+06 Feb 2013     Peter Babalis     Cross Object Field and Email Templates (Challenge 2020)
+24 Sep 2013     Peter Babalis     External Id (Challenge 2790)
+28 Dec 2013     Peter Babalis     Insert/Upsert Unrelated Object (Challenge 3251)
+30 Dec 2013     Peter Babalis     Send Email HTML Format
+31 Dec 2013     Peter Babalis     Owner Priortization
+07 Jan 2014     Peter Babalis     Account Team Member and Share
+-->
+<apex:page standardController="RuleAction__c" id="pg" extensions="AW_RuleActionsController" tabstyle="Rule__c"> 
+ 
+      
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>  
+          
+  <script>
+ var hasValue = false;
+ function checkCalculateFormulaValue(formulaVal){
+    if(formulaVal.length == 0 && hasValue){
+        hasValue = false;
+        showhideValueField();
+    }else if(formulaVal.length > 0 && !hasValue){
+        hasValue = true;
+        showhideValueField();
+    }
+    
+ }
+</script> 
+
+   <apex:form id="frm">
+         <apex:actionStatus id="eventStatus"  >
+         <apex:facet name="start">
+          <apex:outputPanel >
+                        <div style="width:100%;height:100%;position:absolute;top:0;left:0;">
+                            <div style="position:absolute;top:50%;left:50%">
+                                <apex:image value="/img/loading32.gif"></apex:image>
+                            </div>
+                        </div>
+           </apex:outputPanel>
+        </apex:facet>   
+         </apex:actionStatus>
+        <apex:sectionHeader subtitle="{!IF(edit,newRuleAction.Name,'New Rule Action')}" title="Rule Action Edit"/>
+        <apex:pagemessages id="pgMsg"/>
+        <apex:pageBlock title="Rule Action Edit" id="pb">
+            <apex:pageBlockButtons >
+                <!-- apex:commandButton value="Save" action="{!saveRuleAction}" disabled="{!(Not(renderValueField))}"/-->
+                 <apex:commandButton value="Save" action="{!saveRuleAction}" immediate=""/>
+                <!-- apex:commandButton value="Save and New" action="{!saveAndNewRuleAction}" disabled="{!(Not(renderValueField))}"/-->
+                 <!--apex:commandButton value="Save and New" action="{!saveAndNewRuleAction}" /-->
+                
+                <apex:commandButton value="Cancel" action="{!cancel}"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection title="Information" columns="2" id="pgSect">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Action"></apex:outputLabel>
+                    <Apex:panelGroup ><table><tr>
+                    <td><apex:actionSupport >
+                        <apex:inputField id="actionType" value="{!newRuleAction.Type__c}" required="true" rendered="{!!(edit)}">
+                            <apex:actionsupport event="onchange" rerender="optPan,bulkAPI,sendemail_panel,apex_job,httpcallout_job,pgSect,chatterNotification" status="eventStatus"></apex:actionsupport>
+                        </apex:inputField>
+                    </apex:actionSupport></td>
+                         <td>Use Bulk API <apex:outputPanel id="bulkAPI"><apex:inputField label="" value="{!newRuleAction.Bulk_API__c}"  rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Update Field' || newRuleAction.Type__c == 'Insert Unrelated Object' }"  />
+                          </apex:outputPanel></td>
+                    </tr></table>
+                    </Apex:panelGroup>
+                    
+                </apex:pageblocksectionItem>
+                <apex:outputField rendered="{!edit}" value="{!newRuleAction.Type__c}" />    
+                <!-- apex:inputField value="{!newRuleAction.Rule__c}"/-->
+                <apex:outputField value="{!newRuleAction.Rule__c}"/>
+                 <apex:pageBlockSectionItem rendered="{!OR(!edit && (newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Send Email' || newRuleAction.Type__c == 'Update Field' || newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object'),newRuleAction.Type__c != 'Insert Related Object' && newRuleAction.Type__c != 'Send Email' && newRuleAction.Type__c != 'Upsert Related Object')}">
+              
+                    <apex:outputLabel value="Related Object"></apex:outputLabel>
+                    <apex:actionRegion >
+                     <apex:selectList id="rootObject"  value="{!objType}" size="1" onchange="fieldNamesList(this.options[this.selectedIndex].value);" rendered="{!NOT(newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object')}">
+                           <apex:selectOptions value="{!objOptions}"/>
+                    </apex:selectList>
+                      <apex:selectList value="{!objType}" size="1" onchange="fieldNamesList(this.options[this.selectedIndex].value);" rendered="{!(newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object')}">
+                          <apex:selectOptions value="{!unrelatedObjectOptions}"/>
+                    </apex:selectList>
+                    </apex:actionRegion>
+                </apex:pageBlockSectionItem>
+                     <apex:outputField rendered="{!(edit && (newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Send Email' || newRuleAction.Type__c == 'Insert Unrelated Object'  || newRuleAction.Type__c == 'Upsert Unrelated Object' ))}" value="{!newRuleAction.Related_Object__c}" />
+                      
+                <apex:inputField value="{!newRuleAction.Name}" rendered="{!edit}"/>
+               
+                 <apex:pageBlockSectionItem rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Update Field' || newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Insert Unrelated Object'  || newRuleAction.Type__c == 'Upsert Unrelated Object' }" helpText="Cross Object Field Notation : Relationshipname.FieldName. Eg:- Account.Type">
+                     <apex:outputLabel value="Field Name"></apex:outputLabel>
+                    <apex:outputPanel id="fieldPanel"> 
+                      <apex:actionRegion >
+                        <apex:selectList id="fieldSelectionList" onchange="assignment_allowed()" value="{!fieldType}" size="1">
+                            <apex:selectOptions value="{!fieldOption}"/>
+                        </apex:selectList>
+                         <apex:outputPanel id="CFPanel" title="Cross Object Field Notation : Relationshipname.FieldName. Eg:- Account.Type">                                        
+                           <apex:inputField id="crossformulafield" value="{!newRuleAction.CrossObjectField__c}" rendered="{!isCrossFormula}"/>                    
+                         </apex:outputPanel> 
+                         
+                        <apex:actionFunction name="assignment_allowed" action="{!displayAssignmentPanel}" reRender="assignment_panel,fieldTypeApiPanel,fieldApiPanel,fieldId,valOptPan,CFPanel,lookupPanel,ownerprioritization "/>
+                        </apex:actionRegion>
+                    </apex:outputPanel>    
+               </apex:pageBlockSectionItem> 
+                            
+               <apex:pageBlockSectionItem rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Update Field' || newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object' }">
+               
+                  <apex:outputLabel value="Field Api Name"></apex:outputLabel>
+                         <apex:outputPanel id="fieldApiPanel"> 
+                             <apex:outputField value="{!newRuleAction.Field_API_Name__c}"/>
+                          </apex:outputPanel>
+                 </apex:pageBlockSectionItem>                   
+                   <apex:pageBlockSectionItem id="fieldSec" helpText="Merge Field notation: {!helpTextMF}" rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Update Field' || newRuleAction.Type__c == 'Upsert Related Object'  || newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object'}">
+                    <apex:outputPanel id="valOptPan">
+                    <apex:outputLabel value="Value" rendered="{!UPPER(newRuleAction.Field_API_Name__c) != 'OWNERID'  && renderValueField}" />
+                    </apex:outputPanel>
+                    
+                   <apex:outputPanel id="fieldId">
+                     <apex:pageBlockSection >
+                          <apex:outputPanel id="inputValPnl" rendered="{!renderValueField}">
+                                  <apex:inputField required="false" label="" value="{!sobjInstance[newRuleAction.Field_API_Name__c]}" rendered="{!UPPER(newRuleAction.Field_API_Name__c) != 'OWNERID'  && renderValueField && !isCrossFormula && !isObjectField && !isOwnerPriority && renderValueFieldForFormula}" ></apex:inputField>
+                             </apex:outputPanel>
+                     <!--  added to handle merge fields for datatype other than string -->
+                     
+                   <apex:pageBlockSectionitem helpText="Calculated date formula notation:Today(),Now(),Today()+7d or Calculated formula notation: {!helpTextMF}" rendered="{!UPPER(newRuleAction.Field_Type__c) != 'STRING' && UPPER(newRuleAction.Field_Type__c) != 'REFERENCE' && renderValueField && !isCrossFormula && !isObjectField }">    
+                        <apex:outputLabel >Calculated Formula</apex:outputLabel>
+                             <apex:panelgroup >
+                                 <!-- 
+                                  apex:inputtext id="mergeFormula" value="{!calculateFormulaForReference}" title="Calculated Date formula notation:Today(),Now(),Today()+7d or Calculated formula notation: {!helpTextMF}"  onKeyUp="checkCalculateFormulaValue(this.value);"></apex:inputtext>
+                                  <a href="#" onclick="mergeFieldSelector('mergeFormula','{!objType}');" >Guide Me</a>
+                                 -->
+                             <apex:inputtext id="formulaField" value="{!calculateFormulaForReference}"   onKeyUp="checkCalculateFormulaValue(this.value);"></apex:inputtext>
+                           
+                             <c:AW_GuideME RootObjectFieldId="rootObject" FormulaFieldId="formulaField" SelectElementSize="10" OpenPopupWithButton="false"/>
+        
+                            </apex:panelgroup>
+                     </apex:pageBlockSectionitem>
+                    
+                     <apex:pageBlockSectionitem helpText="Calculated formula notation: {!helpTextMF}" rendered="{!UPPER(newRuleAction.Field_Type__c) == 'REFERENCE' && renderValueField && !isCrossFormula && !isObjectField && UPPER(newRuleAction.Field_API_Name__c) != 'OWNERID'}">    
+                        <apex:outputLabel >Calculated Formula</apex:outputLabel>
+                            <apex:panelgroup >
+                                 
+                                      <!-- 
+                                      apex:inputtext id="mergeFormula1" value="{!calculateFormulaForReference}" title="Calculated formula notation: {!helpTextMF}"  onKeyUp="checkCalculateFormulaValue(this.value);"></apex:inputtext>
+                                     <a href="#" onclick="mergeFieldSelector('mergeFormula1','{!objType}');" >Guide Me</a>
+                               -->
+                                 <apex:inputtext id="formulaField1" value="{!calculateFormulaForReference}" title="Calculated formula notation: {!helpTextMF}"  onKeyUp="checkCalculateFormulaValue(this.value);"></apex:inputtext>
+                                
+                                    <c:AW_GuideME RootObjectFieldId="rootObject" FormulaFieldId="formulaField1" SelectElementSize="10" OpenPopupWithButton="false"/>
+                               
+                              
+                                </apex:panelgroup>
+                      </apex:pageBlockSectionitem>
+                    <apex:actionRegion >
+                        <apex:actionFunction name="showhideValueField" action="{!showHideValueField}" reRender="inputValPnl,valOptPan"/>
+                    </apex:actionRegion>
+                    
+                    </apex:pageBlockSection>
+                     <apex:inputField value="{!newRuleAction.Value__c}" required="false" rendered="{!isCrossFormula || isObjectField}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Update Field'}">
+                  <apex:outputLabel value="Field Type"></apex:outputLabel>
+                         <apex:outputPanel id="fieldTypeApiPanel"> 
+                             <apex:outputField value="{!newRuleAction.Field_Type__c}"/>
+                          </apex:outputPanel>
+                 </apex:pageBlockSectionItem> 
+               
+                 <apex:pageBlockSectionItem rendered="{!(newRuleAction.Type__c == 'Upsert Related Object' || newRuleAction.Type__c == 'Upsert Unrelated Object')}">
+                     <apex:outputLabel value="External ID"></apex:outputLabel>
+                    <apex:outputPanel >
+                    <apex:selectList value="{!newRuleAction.External_Field_API_Name__c}" size="1">
+                        <Apex:selectOption itemValue="" ItemLabel="--none--"> </Apex:selectOption>
+                        <apex:selectOptions value="{!externalFieldsList}"></apex:selectOptions>
+                    </apex:selectList>
+<!--                    <apex:inputText value="{!newRuleAction.ExternalId__c}"></apex:inputText>-->
+                    </apex:outputPanel>
+                 </apex:pageBlockSectionItem>  
+                  
+                <apex:inputField value="{!newRuleAction.Action_Label__c}" rendered="{! newRuleAction.Type__c == 'Canvas' || newRuleAction.Type__c == 'Load a VF Page' || newRuleAction.Type__c == 'Load Iframe' ||newRuleAction.Type__c == 'Chatter Notification' }" /> 
+                <apex:pageBlockSectionItem rendered="{!newRuleAction.Type__c == 'Load Iframe' }">
+                   <apex:panelGroup >
+                   <apex:outputLabel value="URL" ></apex:outputLabel>
+                   
+                  </apex:panelGroup>      
+                         <apex:outputPanel > 
+                             <apex:inputField value="{!newRuleAction.Endpoint_URL__c}"/>
+                          </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem rendered="{! newRuleAction.Type__c == 'Canvas'}"> 
+                   <apex:outputLabel value="Canvas App Name" />
+                        
+                         <apex:outputPanel > 
+                             <apex:inputField value="{!newRuleAction.Value__c}"/>
+                          </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!newRuleAction.Type__c == 'Load a VF Page' }">
+                  
+                        <apex:outputLabel value="Page"></apex:outputLabel>
+                         <apex:outputPanel > 
+                            <apex:selectList value="{!newRuleAction.Value__c}" id="vfPages"   size="1">
+                                <apex:selectOptions value="{!vfPages}"/>
+                            </apex:selectList> 
+                          </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+              
+               <apex:inputField value="{!newRuleAction.Input_Parameters__c}" rendered="{! newRuleAction.Type__c == 'Canvas' || newRuleAction.Type__c == 'Load Iframe' || newRuleAction.Type__c == 'Load a VF Page'}" />
+               
+                  
+             </apex:pageBlockSection> 
+            <apex:outputPanel id="lookupPanel" >
+             <apex:pageBlockSection rendered="{!isObjectField}">        
+                    <apex:pageBlockSectionItem > 
+                     <apex:outputLabel value="Lookup Object"></apex:outputLabel>
+                      <apex:selectList style="width:250px;" value="{!newRuleAction.Lookup_Object__c}" id="lkfieldObjectList" onchange="showlookupobjfields(this.value)"  size="1">
+                            <apex:selectOptions value="{!allObjectOptions}"/>
+                      </apex:selectList>
+                     </apex:pageBlockSectionItem> 
+                     
+                      <apex:pageBlockSectionItem > 
+                      <apex:outputLabel value="Lookup To Field Name"></apex:outputLabel>
+                          <apex:selectList value="{!newRuleAction.Lookup_Field_Name__c}" id="lkfieldSelectionList"   size="1">
+                                <apex:selectOptions value="{!fieldOption}"/>
+                          </apex:selectList>
+                     </apex:pageBlockSectionItem>
+                     
+                     <apex:pageBlockSectionItem > 
+                      <apex:outputLabel value="Lookup From Field Name"></apex:outputLabel>
+                          <apex:selectList value="{!newRuleAction.Lookup_Field_API_Name__c}" id="lkfieldSelectionList"   size="1">
+                                <apex:selectOptions value="{!lkObjectFieldOptions}"/>
+                          </apex:selectList>
+                     </apex:pageBlockSectionItem>
+                     <apex:inputfield value="{!newRuleAction.Lookup_Where_Fields__c}" />
+                      <apex:actionFunction name="showlookupobjfields" action="{!getLookupFields}" reRender="lookupPanel">
+                        <apex:param name="selectedLookupObject" value="" />
+                      </apex:actionFunction> 
+                     
+              </apex:pageBlockSection> 
+             </apex:outputPanel>    
+             <apex:outputPanel id="assignment_panel">
+                
+                <apex:pageBlockSection id="assignment" rendered="{!(newRuleAction.Field_API_Name__c!= null && UPPER(newRuleAction.Field_API_Name__c) == 'OWNERID')}" title="Select the user /queue to assign the {!objType} to">
+                    <apex:inputField value="{!sobjInstance[newRuleAction.Field_API_Name__c]}" required="false" ></apex:inputField>
+                    <apex:pageBlockSectionitem helpText="Calculated formula notation: {!helpTextMF}">    
+                        <apex:outputLabel >Calculated Formula</apex:outputLabel>
+                        <apex:panelgroup >
+                            
+                            <!-- 
+                             apex:inputtext id="mergeFormula2" value="{!calculateFormulaForReference}"  ></apex:inputtext> 
+                             <a href="#" onclick="mergeFieldSelector('mergeFormula2','{!objType}');" >Guide Me</a>
+                             -->
+                             
+                              <apex:inputtext id="formulaField2" value="{!calculateFormulaForReference}"  ></apex:inputtext> 
+                       
+                              <c:AW_GuideME RootObjectFieldId="rootObject" FormulaFieldId="formulaField2" SelectElementSize="10" OpenPopupWithButton="false"/>
+       
+                      
+                        </apex:panelgroup>
+                   
+                    </apex:pageBlockSectionitem>
+                     <!-- <apex:inputField value="{!newRuleAction.Notify_User__c}"/> -->
+                    <!--  adding email template picklist -->
+                    <apex:selectList id="EmailTemplate" value="{!newRuleAction.Email_Template__c}" size="1" title="EmailTemplate">
+                            <apex:selectOptions value="{!Templates}"></apex:selectOptions>
+                    </apex:selectList>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            
+            <!-- APEX JOB -->
+             <apex:outputPanel id="apex_job">
+                    <apex:pageBlockSection id="apexjob" rendered="{!(newRuleAction.Type__c!= null && UPPER(newRuleAction.Type__c) == 'EXECUTE AN APEX JOB')}" title="Select the apex class to execute">
+                     <apex:pageBlockSectionitem >
+                     <apex:outputLabel >Apex Class</apex:outputLabel>
+                    <!-- 
+                     <apex:selectList value="{!newRuleAction.Apex_Job_Class__c}" id="apexClasses"   size="1">
+                                <apex:selectOptions value="{!apexClasses}"/>
+                     </apex:selectList>
+                      -->
+                      <apex:inputField value="{!newRuleAction.Apex_Job_Class__c}"  />
+                   
+                     </apex:pageBlockSectionitem>
+                     <apex:pageBlockSectionitem ></apex:pageBlockSectionitem>
+                     
+                        <apex:inputField value="{!newRuleAction.Input_Parameters__c}" />
+                     
+                        <apex:inputField value="{!newRuleAction.Output_Parameters__c}" />
+                    
+                     </apex:pageBlockSection>
+             </apex:outputPanel> 
+             
+             <!--  HTTP CALLOUTS -->
+             <apex:outputPanel id="httpcallout_job">
+                    <apex:pageBlockSection id="httpcallout" rendered="{!(newRuleAction.Type__c!= null && UPPER(newRuleAction.Type__c) == 'APEX CALLOUT-HTTP')}" title="Configure HTTP Callout">
+                        
+                        <apex:inputField value="{!newRuleAction.Endpoint_URL__c}" />
+                        <apex:inputField value="{!newRuleAction.CallOut_Action__c}" />
+                        <apex:inputField value="{!newRuleAction.Callout_Method__c}" />
+                        <apex:inputField value="{!newRuleAction.Callout_Timeout__c}" />
+                   
+                        <apex:inputField value="{!newRuleAction.Input_Parameters__c}" />
+                     
+                        <apex:inputField value="{!newRuleAction.Output_Parameters__c}" />
+                         <apex:inputField value="{!newRuleAction.Notified_User__c}" />
+                     </apex:pageBlockSection>
+             </apex:outputPanel> 
+            
+            <!-- SEND EMAIL INFO -->
+             <apex:outputPanel id="sendemail_panel">
+                <apex:pageBlockSection id="sendemail" rendered="{!(newRuleAction.Type__c!= null && UPPER(newRuleAction.Type__c) == 'SEND EMAIL')}" title="Select the user /queue to send email">
+                 <apex:pageBlockSectionitem id="sendemailSection"> 
+                     <apex:outputLabel >Send To</apex:outputLabel>  
+                     <apex:panelgroup >
+                         <apex:selectList value="{!sendEmailToString}" id="chooseSendemailto" size="1" onchange="showemailtooptions(this.value)">
+                           <apex:selectOption itemValue="" itemLabel="--Select--"/>
+                            <apex:selectOption itemValue="User" itemLabel="User"/>
+                            <apex:selectOption itemValue="Queue" itemLabel="Queue"/>
+                            <apex:selectOption itemValue="Public Groups" itemLabel="Public Groups"/>
+                        </apex:selectList> 
+                        <apex:outputPanel id="emailoptions">
+                        <apex:outputPanel id="user" rendered="{!sendEmailToString == 'User'}" >
+                         <apex:inputHidden id="sendToUser_lkid" value="{!newRuleAction.User_Owner_Id__c}"  />
+	                        <apex:inputText id="sendToUser" value="{!sendEmailUserName}" />
+	                        <apex:inputHidden id="sendToUser_lspfsub" />
+	                        <apex:inputHidden id="sendToUser_lkold" />
+	                        <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="sendToUser_lkwgt" href="javascript:openRecordLookup('sendToUser', 'pg:frm:pb:sendemail:sendemailSection:');">
+	                        	<img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+	                        </a> 
+	                    </apex:outputPanel>
+                        <apex:selectList value="{!newRuleAction.User_Owner_Id__c}" size="1" title="emailoptions" rendered="{!AND(sendEmailToString != 'User' , !ISNULL(emailoptions))}">
+                            <!-- <apex:selectOptions value="{!emailoptions}"></apex:selectOptions>-->
+                            <apex:selectOptions value="{!emailoptions[0]}" rendered="{!emailoptions.size > 0}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[1]}" rendered="{!emailoptions.size > 1}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[2]}" rendered="{!emailoptions.size > 2}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[3]}" rendered="{!emailoptions.size > 3}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[4]}" rendered="{!emailoptions.size > 4}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[5]}" rendered="{!emailoptions.size > 5}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[6]}" rendered="{!emailoptions.size > 6}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[7]}" rendered="{!emailoptions.size > 7}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[8]}" rendered="{!emailoptions.size > 8}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[9]}" rendered="{!emailoptions.size > 9}"></apex:selectOptions>
+                         </apex:selectList>
+                         </apex:outputPanel>
+                     </apex:panelgroup>   
+                  </apex:pageBlockSectionitem>
+                  <apex:inputField value="{!newRuleAction.Additional_Emails__c}" />
+                 <!-- 
+                 <apex:pageBlockSectionitem >    
+                        <apex:outputLabel >Calculated Formula</apex:outputLabel>
+                        <apex:inputtext value="{!calculateFormulaForReference}"  ></apex:inputtext>
+                 </apex:pageBlockSectionitem>
+                 -->
+                 
+                 <!--  adding email folder picklist -->
+                  <apex:pageBlockSectionitem > 
+                  <apex:outputLabel >Email Folder</apex:outputLabel>  
+                 <apex:selectList value="{!newRuleAction.Email_Template_Folder__c}" id="EmailTemplateFolder"  size="1" title="Email Folder" onchange="getEmailTemplatesFromFolder(this.value)">
+                            <apex:selectOptions value="{!Folders}"></apex:selectOptions>
+                 </apex:selectList>
+                  </apex:pageBlockSectionitem>
+                 
+                 
+                 <!--  adding email template picklist -->
+                 <apex:selectList id="EmailTemplate" value="{!newRuleAction.Email_Template__c}" size="1" title="EmailTemplate" rendered="{!!IsNull(emailTemplateOptions)}">
+                        <apex:selectOptions value="{!emailTemplateOptions[0]}" rendered="{!emailTemplateOptions.size > 0}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[1]}" rendered="{!emailTemplateOptions.size > 1}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[2]}" rendered="{!emailTemplateOptions.size > 2}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[3]}" rendered="{!emailTemplateOptions.size > 3}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[4]}" rendered="{!emailTemplateOptions.size > 4}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[5]}" rendered="{!emailTemplateOptions.size > 5}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[6]}" rendered="{!emailTemplateOptions.size > 6}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[7]}" rendered="{!emailTemplateOptions.size > 7}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[8]}" rendered="{!emailTemplateOptions.size > 8}"></apex:selectOptions>
+                        <apex:selectOptions value="{!emailTemplateOptions[9]}" rendered="{!emailTemplateOptions.size > 9}"></apex:selectOptions>
+                 </apex:selectList>
+                 
+                </apex:pageBlockSection>
+                  <apex:actionFunction action="{!buildEmailOptionsValues}" name="showemailtooptions" reRender="emailoptions,chatterNotification,ownerprioritization" status="eventStatus" immediate="true">
+                       <apex:param name="sendemailto" value="" assignTo="{!sendEmailToString}"/>
+                  </apex:actionFunction>
+                  
+                 <apex:actionFunction action="{!getTemplates}" name="getEmailTemplatesFromFolder" reRender="sendemail_panel"  status="eventStatus">
+                      <apex:param name="folderId" value=""/>
+                  </apex:actionFunction>
+                  
+            </apex:outputPanel>
+            
+            
+             <apex:outputPanel id="chatterNotification">
+                <apex:pageBlockSection id="sendemail1" rendered="{!(newRuleAction.Type__c!= null && UPPER(newRuleAction.Type__c) == 'CHATTER NOTIFICATION')}" title="Select the user /group to send">
+                  <apex:pageBlockSectionitem >
+                    <apex:outputLabel >Message</apex:outputLabel>   
+                    <apex:inputField value="{!newRuleAction.Input_Parameters__c}" />
+                </apex:pageBlockSectionitem>
+                 <apex:pageBlockSectionitem id="sendChatterSection"> 
+                     <apex:outputLabel >Send To</apex:outputLabel>  
+                     <apex:panelgroup >
+                         <apex:selectList value="{!sendEmailToString}" id="chooseSendemailto" size="1" onchange="showemailtooptions(this.value)">
+                           <apex:selectOption itemValue="" itemLabel="--Select--"/>
+                            <apex:selectOption itemValue="User" itemLabel="User"/>                           
+                            <apex:selectOption itemValue="Chatter Groups" itemLabel="Chatter Groups"/>
+                        </apex:selectList> 
+                        <apex:outputPanel id="emailoptions1">
+                        <apex:outputPanel id="user" rendered="{!sendEmailToString == 'User'}" >
+                         <apex:inputHidden id="sendChatter_lkid" value="{!newRuleAction.User_Owner_Id__c}"  />
+	                        <apex:inputText id="sendChatter" value="{!sendEmailUserName}" />
+	                        <apex:inputHidden id="sendChatter_lspfsub" />
+	                        <apex:inputHidden id="sendChatter_lkold" />
+	                        <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="sendChatter_lkwgt" href="javascript:openRecordLookup('sendChatter', 'pg:frm:pb:sendemail1:sendChatterSection:');">
+	                        	<img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+	                        </a> 
+	                    </apex:outputPanel>
+                        <apex:selectList value="{!newRuleAction.User_Owner_Id__c}" size="1" title="emailoptions" rendered="{!AND(sendEmailToString != 'User' , !IsNull(emailoptions))}">
+                            <!-- <apex:selectOptions value="{!emailoptions}"></apex:selectOptions>-->
+                            <apex:selectOptions value="{!emailoptions[0]}" rendered="{!emailoptions.size > 0}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[1]}" rendered="{!emailoptions.size > 1}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[2]}" rendered="{!emailoptions.size > 2}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[3]}" rendered="{!emailoptions.size > 3}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[4]}" rendered="{!emailoptions.size > 4}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[5]}" rendered="{!emailoptions.size > 5}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[6]}" rendered="{!emailoptions.size > 6}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[6]}" rendered="{!emailoptions.size > 7}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[8]}" rendered="{!emailoptions.size > 8}"></apex:selectOptions>
+                            <apex:selectOptions value="{!emailoptions[9]}" rendered="{!emailoptions.size > 9}"></apex:selectOptions>
+                         </apex:selectList>
+                        </apex:outputPanel>
+                     </apex:panelgroup>   
+                  </apex:pageBlockSectionitem>
+                  
+                </apex:pageBlockSection>      
+            </apex:outputPanel>
+ <!--  Section to display existing /add new owner prioritization records -->
+            
+            <apex:outputpanel id="ownerprioritization">
+            	 <apex:pageBlockSection columns="3" id="ownerpriority" rendered="{!(newRuleAction.Field_API_Name__c!= null && UPPER(newRuleAction.Field_API_Name__c) == 'OWNERPRIORITIZATION')}" title="Select the user /queue /group">
+	                 
+	                 <apex:inputField value="{!newRuleAction.Prioritization_Method__c}" />
+	                 <apex:pageBlockSectionitem ></apex:pageBlockSectionitem> <apex:pageBlockSectionitem ></apex:pageBlockSectionitem>
+	                 <apex:pageBlockSectionitem id="ownerPrioritySection"> 
+	                      
+	                      
+	                     <apex:outputLabel >Assign To</apex:outputLabel>  
+	                     <apex:panelgroup >
+	                         <apex:selectList value="{!sendEmailToString}" id="chooseAssignto" size="1" onchange="showemailtooptions(this.value)">
+	                           <apex:selectOption itemValue="" itemLabel="--Select--"/>
+	                            <apex:selectOption itemValue="User" itemLabel="User"/>
+	                            <apex:selectOption itemValue="Queue" itemLabel="Queue"/>
+	                            <apex:selectOption itemValue="Public Groups" itemLabel="Public Groups"/>
+	                            <apex:selectOption itemValue="UserRole" itemLabel="User Role" />
+	                        </apex:selectList>
+	                        <apex:outputPanel id="owneroptions" >
+	                         <apex:outputPanel id="ownerPanel" rendered="{!sendEmailToString == 'User'}" >
+	                         <apex:inputHidden id="ownerP_lkid" value="{!ownerPriority.User_Queue_Group_Id__c}"  />
+		                        <apex:inputText id="ownerP" value="{!sendEmailUserName}" />
+		                        <apex:inputHidden id="ownerP_lspfsub" />
+		                        <apex:inputHidden id="ownerP_lkold" />
+		                        <a title="Record Lookup(New Window)" onclick="setLastMousePosition(event)" id="ownerP_lkwgt" href="javascript:openRecordLookup('ownerP', 'pg:frm:pb:ownerpriority:ownerPrioritySection:');">
+		                        	<img title="Record Lookup (New Window)" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onblur="this.className = 'lookupIcon';" class="lookupIcon" alt="Record Lookup (New Window)" src="/s.gif" />
+		                        </a> 
+	                    </apex:outputPanel>
+	                        <apex:selectList value="{!ownerPriority.User_Queue_Group_Id__c}" size="1" title="emailoptions" rendered="{!AND(sendEmailToString != 'User' , !IsNull(emailoptions))}">
+	                            <apex:selectOptions value="{!emailoptions[0]}" rendered="{!emailoptions.size > 0}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[1]}" rendered="{!emailoptions.size > 1}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[2]}" rendered="{!emailoptions.size > 2}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[3]}" rendered="{!emailoptions.size > 3}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[4]}" rendered="{!emailoptions.size > 4}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[5]}" rendered="{!emailoptions.size > 5}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[6]}" rendered="{!emailoptions.size > 6}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[6]}" rendered="{!emailoptions.size > 7}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[8]}" rendered="{!emailoptions.size > 8}"></apex:selectOptions>
+                            	<apex:selectOptions value="{!emailoptions[9]}" rendered="{!emailoptions.size > 9}"></apex:selectOptions>       
+	                         </apex:selectList>
+	                        </apex:outputPanel> 
+	                     </apex:panelgroup>   
+	                  </apex:pageBlockSectionitem>
+	                  
+	                   <apex:pageBlockSectionitem >
+	                   		<apex:commandbutton value="Add" action="{!addOwnerPriority}" rerender="ownerprioritization,pgMsg" status="eventStatus"  />
+	                   </apex:pageBlockSectionitem>
+	                    
+ 				</apex:pageBlockSection>
+       			<apex:pageBlockSection columns="1" id="ownerpriorityTable" rendered="{!(newRuleAction.Field_API_Name__c!= null && UPPER(newRuleAction.Field_API_Name__c) == 'OWNERPRIORITIZATION')}" title="Existing">
+       				<apex:pageBlockTable value="{!ownerPriorityList}" var="cr" id="newlyadded">
+						
+						<apex:column >
+						<a href="javascript:if (window.confirm('Are you sure?')) deleteOwnerPriority('{!cr}');">Remove</a>
+						</apex:column>
+						
+			            <apex:column headerValue="User" value="{!ownerPriorityList[cr].User_Queue_Group__c}"/> 
+			            <apex:column headerValue="Weight"><apex:inputField value="{!ownerPriorityList[cr].Weight__c}" /> </apex:column>
+			 			<apex:column headerValue="Priority"><apex:inputField value="{!ownerPriorityList[cr].Priority__c}" /> </apex:column>
+			        </apex:pageBlockTable> 
+
+                        
+                </apex:pageBlockSection>  
+                <apex:actionFunction action="{!deleteOwnerPriority}" name="deleteOwnerPriority" immediate="true" reRender="ownerpriorityTable" status="eventStatus">
+                    <apex:param name="rowownerid" value="" assignTo="{!selectedRecordId}"/>
+                </apex:actionFunction>              
+            </apex:outputpanel>
+                       
+            <!--  Start Cloud Challenger --> 
+            <apex:outputPanel id="optPan">
+             <!--   
+                <apex:pageBlockSection title="Upsert External Id" collapsible="false" columns="2" rendered="{! newRuleAction.Type__c == 'Upsert Related Object'}">
+                    <apex:inputfield value="{!newRuleAction.External_Field_API_Name__c}" />
+                    <apex:inputfield value="{!newRuleAction.ExternalId__c}" />
+                </apex:pageBlockSection>
+               -->  
+                 <apex:commandButton title="Add Related Field Info" rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Upsert Related Object'  || newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object'}" value="Add Related Field"  action="{!createRelateRec}" oncomplete="assignment_allowed();" reRender="optPan,pgSect"/>
+                
+                <apex:pageBlockSection title="Insert Related Record Information" collapsible="false" columns="1" rendered="{!newRuleAction.Type__c == 'Insert Related Object' || newRuleAction.Type__c == 'Upsert Related Object'  || newRuleAction.Type__c == 'Insert Unrelated Object' || newRuleAction.Type__c == 'Upsert Unrelated Object'}">
+                
+             <!--   
+               
+                <apex:pageBlockSection title="{!if(newRuleAction.Type__c == 'Insert Related Object','Insert','Upsert')} Related Record Information" collapsible="false" columns="1" rendered="{!newRuleAction.Type__c == 'Insert Related Object'  || newRuleAction.Type__c == 'Upsert Related Object'}">
+               -->     
+                    <apex:pageBlockTable value="{!lstInsRelRec}" var="rec" >
+                        <apex:column headerValue="Action">
+                            <a href="javascript:if (window.confirm('Are you sure?')) deleteRecord('{!rec.Name}');" style="font-weight:bold">Del</a>
+                        </apex:column>
+                        <apex:column value="{!rec.Name}" headerValue="Field Name"/>
+                        <apex:column value="{!rec.Value__c}" headerValue="Value"/>
+                    </apex:pageBlockTable>
+                </apex:pageBlockSection>
+            </apex:outputPanel>  
+            <apex:actionFunction action="{!deleteRec}" name="deleteRecord" immediate="true" reRender="optPan,pgSect" >
+                <apex:param name="rowid" value="" assignTo="{!selectedRecordId}"/>
+            </apex:actionFunction>
+          <!--  End Cloud Challenger -->  
+        </apex:pageBlock>
+        <apex:actionRegion >
+            <apex:actionFunction name="fieldNamesList" action="{!getFieldNames}" reRender="fieldPanel,assignment_panel,fieldTypeApiPanel,fieldApiPanel,fieldId,assignment,valOptPan,pgMsg,frm" oncomplete="showCrossObjectFieldInColor();">
+                <apex:param assignTo="{!parentName}" value="" name="parentName"/>
+            </apex:actionFunction>
+        </apex:actionRegion>
+    </apex:form>
+      <!-- include the merge field component -->
+   
+    <script>
+        $j=jQuery.noConflict();
+        $j(document).ready(function() {
+           showCrossObjectFieldInColor();
+           
+         });
+         
+         function showCrossObjectFieldInColor(){
+             $j('select[id*="fieldSelectionList"] option[value="CrossObject"]').css("color", "red");
+             $j('select[id*="fieldSelectionList"] option[value="LookupObjectField"]').css("color", "red");
+             $j('select[id*="fieldSelectionList"] option[value="OwnerPrioritization"]').css("color", "red");
+         
+         }
+         
+         function openRecordLookup(compName, prefixComp){
+         	var url = '/_ui/common/data/LookupPage?lkfm=pg:frm&lknm='+prefixComp + compName +'&lktp=005';
+         	var recNameComp = document.getElementById(prefixComp + compName);
+         	if(recNameComp != null && recNameComp.value != null){
+         		url +='&lksrch=' + recNameComp.value;
+         	}
+         	openLookup(url);
+         	
+         }
+         
+       
+    </script>  
+</apex:page>

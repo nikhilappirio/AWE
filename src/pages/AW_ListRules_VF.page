@@ -1,0 +1,1806 @@
+<!-- *********************************************************************************
+Name : AW_ListRules_VF
+Created By : Appirio   [Peter Babalis]
+Created Date : 20 April 2013
+Purpose : Custom  page to list all rules associated with a workflow
+********************************************************************************* -->
+<apex:page standardController="Advance_Workflow__c" cache="false"
+	extensions="AW_ListRules" id="pgInstallBase" sidebar="false">
+	<!--  General CSS -->
+	<style>
+div.centered {
+	margin-left: 10px;
+	text-align: left;
+}
+div.centered table 
+{
+    margin-left:50px;
+    text-align: left;
+}
+.headerTextBox {
+	width: 100px;
+}
+.headerTextBox>span {
+	display: block;
+}
+.headerTextBoxSmall {
+	width: 50px;
+}
+.headerTextBoxSmall>span {
+	display: block;
+}
+.fixedColElement>input,.customColElement>input {
+	width: 100px;
+}
+
+.fixedColElementSmall>input,.customColElementSmall>input {
+	width: 30px;
+}
+
+.bPageBlock>pbTitle,.mainTitle {
+	width: 120px;
+}
+
+.bPageBlock .pbTitle {
+	vertical-align: middle;
+	color: rgb(34, 34, 34);
+	font-size: 91%;
+	width: 5%;
+	margin: 0px;
+}
+
+.btnPanel { /*padding-top:10px;
+    text-align:center;*/
+	padding-left: 300px;
+}
+
+.btnPanel input.btn {
+	margin-right: 10px !important;
+}
+
+.viewLabel {
+	font-weight: bold;
+	font-size: 120%;
+	padding-right: 5px;
+}
+
+.customRequired {
+	display: inline-block;
+	background-color: #CC0000;
+	width: 3px;
+	height: 20px;
+	margin-right: 1px;
+	position: relative;
+	vertical-align: top;
+}
+
+.errorMsg {
+	color: red;
+	text-align: left;
+	padding-bottom: 10px;
+}
+
+.dpLabel {
+	width: 32px;
+	display: inline-block;
+	text-align: right;
+	padding-right: 2px;
+}
+
+.datePicker {
+	z-index: 110;
+}
+
+.headerOuter {
+	cursor: pointer;
+	white-space: normal;
+	word-wrap: break-word;
+}
+
+.headerLabel { /*float:left;*/
+	word-wrap: break-word;
+}
+
+.ascDesc {
+	float: right;
+	padding-top: 5px;
+	padding-right: 5px;
+	height: 4px;
+	width: 7px;
+}
+
+.list .headerRow th {
+	white-space: normal;
+}
+
+.column {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	width: 100px;
+}
+</style>
+
+	<!--  SORTING CSS-->
+	<style>
+.ascDesc {
+	float: right;
+	padding-top: 5px;
+	padding-right: 5px;
+	height: 4px;
+	width: 7px;
+}
+</style>
+
+	<!--  Pagination CSS -->
+	<style>
+.pageSizeListCloseBtn {
+	cursor: pointer;
+	margin-top: 3px;
+	color: #F5DEB3;
+	float: right;
+	font-family: Lucida Console;
+	font-weight: bold;
+	margin-left: 6px;
+	margin-right: 2px;
+	padding-left: 3px;
+	padding-right: 3px;
+	padding-top: 1px;
+	background-color: #FA8072;
+}
+
+.pageSizeListCloseBtn:hover {
+	background-color: #FF0000;
+}
+
+.pageSizeOptionList {
+	background-color: #F2F3F3;
+	padding-bottom: 2px;
+	position: absolute;
+	border: 1px solid gray;
+	left: 60px;
+}
+
+.pageSizeOption {
+	cursor: pointer;
+	margin-bottom: 3px;
+	margin-top: 3px;
+	padding-left: 4px;
+	padding-right: 20px;
+	white-space: nowrap;
+}
+
+.pageSizeOption:hover {
+	background-color: #ADD8E6;
+}
+
+.pageSizeOption span {
+	background-color: white;
+	font-weight: bold;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+.pageSizeOptionSelected,.pageSizeOptionSelected:hover {
+	background-color: lightyellow;
+}
+
+.pageSizeArrow {
+	background-image: url("/img/func_icons/util/selectArrow12.gif");
+	background-position: left center;
+	background-repeat: no-repeat;
+	height: 12px;
+	left: 2px;
+	position: relative;
+	top: 1px;
+	width: 14px;
+}
+
+.pageSizeArrow:hover {
+	background-position: -15px 0;
+}
+
+.pageSizeArrowPressed {
+	background-position: -15px 0;
+}
+
+.pageNavigation {
+	margin: 0;
+	position: relative;
+	text-align: center;
+	white-space: nowrap;
+	padding-top: 10px;
+}
+
+.pageNavigation .prevNextLinks {
+	color: #A8A8A8;
+}
+
+.pageNavigation .prevNextLinks .prevNext {
+	margin: 0 3px;
+}
+
+.pageNavigation .prevNextLinks .prevNext a {
+	text-decoration: none
+}
+
+.firstPage {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: 0 1px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+
+.firstPageOff {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: 0 -10px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+
+.prevPage {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -10px 1px;
+	background-repeat: no-repeat;
+	height: 10px;
+	margin: 0;
+	padding: 0;
+	width: 9px;
+}
+
+.prevPageOff {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -10px -10px;
+	background-repeat: no-repeat;
+	height: 10px;
+	margin: 0;
+	padding: 0;
+	width: 9px;
+}
+
+.nextPage {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -17px 1px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+
+.nextPageOff {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -17px -10px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+
+.lastPage {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -27px 1px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+
+.lastPageOff {
+	background-image: url("/img/paginationArrows.gif");
+	background-position: -27px -10px;
+	background-repeat: no-repeat;
+	height: 10px;
+	width: 9px;
+}
+</style>
+
+
+	<!--  Views CSS Start-->
+
+	<style>
+.selectObjectLabel {
+	font-weight: bold;
+	font-size: 120%;
+	padding-right: 5px;
+}
+
+.selectObject {
+	padding-left: 2px;
+	margin-top: 8px;
+	padding-right: 0px;
+	padding-bottom: 18px;
+	height: 22px;
+}
+
+.headerTextBox {
+	text-align: center;
+}
+
+body .fewerMore {
+	display: none;
+}
+
+.selectHeader {
+	height: 18px;
+	width: 100px;
+}
+
+.heightlightLabel {
+	font-weight: bold;
+	padding: 2px 8px 2px 8px;
+}
+
+.heightlightValue {
+	background-color: orange;
+	padding: 2px;
+	display: inline-block;
+	width: 145px;
+	/*height:15px;*/
+}
+
+.dpLabel {
+	width: 40px;
+	display: inline-block;
+	text-align: right;
+	padding-right: 2px;
+}
+
+.newQuoteOption {
+	padding: 2px 6px 2px 8px;
+	cursor: pointer;
+}
+
+.newQuoteOption:hover {
+	background-color: #e3f3ff;
+}
+
+#idMask {
+	position: absolute;
+	z-index: 101;
+	background-color: black;
+	left: 0px;
+	top: 0px;
+}
+
+#idNewQuoteOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 145px;
+}
+
+#idViewOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 145px;
+}
+
+#idMsg {
+	position: absolute;
+	z-index: 102;
+	background-color: transparent;
+	left: 0px;
+	top: 0px;
+}
+
+#idMsgContents {
+	position: absolute;
+	float: left;
+	background-color: white;
+	height: auto;
+	width: 500px;
+	-moz-border-radius: 15px;
+}
+
+#idActionOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 175px;
+}
+
+.newActionOption {
+	padding: 2px 6px 2px 8px;
+	cursor: pointer;
+}
+
+.newActionOption:hover {
+	background-color: #e3f3ff;
+}
+
+.dialogHeader {
+	height: 25px;
+	width: auto;
+	-moz-border-radius: 15px 15px 0 0;
+	background-color: #EAEAEA;
+	padding: 8px 8px 5px;
+}
+
+.dialogBody {
+	clear: both;
+	padding-top: 15px;
+	height: 100%;
+	width: auto;
+	padding: 8px 18px 8px 10px;
+}
+
+.closeBtn {
+	float: right;
+	font-weight: bold;
+	font-size: 18px;
+	cursor: pointer;
+	background-image: url("/img/ple/pletool_sprite.gif");
+	background-position: 0 0;
+	background-repeat: no-repeat;
+	width: 20px;
+	height: 18px;
+}
+
+.title {
+	font-weight: bold;
+	font-size: 16px;
+	padding-left: 8px;
+}
+
+.optionLabel {
+	width: 23%;
+	font-weight: bold;
+}
+
+.optionDisplay {
+	padding-bottom: 3px;
+	padding-left: 5px;
+	padding-top: 3px;
+}
+
+.datePicker {
+	z-index: 110;
+}
+</style>
+
+	<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/themes/base/jquery-ui.css" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
+	<apex:includeScript value="{!URLFOR($Resource.ExcelExportHelper, '/swfobject.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.ExcelExportHelper, '/downloadify.min.js')}"/ >
+
+ <script>
+  var __sfdcSessionId = '{!GETSESSIONID()}';
+</script>
+		<script src="/soap/ajax/21.0/connection.js" type="text/javascript"></script>
+		<script src="/soap/ajax/21.0/apex.js" type="text/javascript"></script>
+
+		<script type="text/javascript">
+    
+
+  if(typeof String.prototype.trim !== 'function') {
+    String.prototype.trim = function() {
+      return this.replace(/^\s+|\s+$/g, ''); 
+    }
+  }
+  
+  var isIE = jQuery.browser.msie ? true : false;  
+  var isIE7 =  (jQuery.browser.msie && parseInt(jQuery.browser.version)==7)?true:false;
+  var isDocumentReady = false;
+  var activeElement;
+  var addMoreFields = [];
+  var nFixedFields = 0;
+  var fixedHeaderLabels = [];
+  var dynamicHeaderLabels = [];
+  var fixedApiFields=[];
+  var dynamicApiFields=[];
+  var fixedApiFieldTypes=[];
+  var dynamicApiFieldTypes=[];
+  var fixedEnteredValues=[];
+  var dynamicEnteredValues=[];
+    
+    
+  <apex:repeat value="{!fixedFieldDetails}" var="field" >
+       var fAPIName = "{!field.label}";
+      if(fAPIName != "Version__c" &&  fAPIName != "Description__c" && fAPIName != "Advance_Workflow__r.Description__c" && fAPIName != "CSV_Formatted_Criteria__c" && fAPIName != "CSV_Formatted_Actions__c"){
+          nFixedFields++;
+          fixedHeaderLabels.push(fAPIName);
+          fixedApiFields.push("{!field.apiName}");
+          var type = "{!field.dataType}";
+          type=type.toUpperCase();
+          if(type == 'ID'){
+            type = 'STRING';
+          }
+          fixedApiFieldTypes.push(type);
+      }
+    </apex:repeat>
+    
+    dynamicHeaderLabels=[];
+    dynamicApiFields=[];
+    dynamicApiFieldTypes=[];
+    <apex:repeat value="{!dynamicFieldDetails}" var="field" >
+   	  dynamicHeaderLabels.push("{!field.label}");
+      dynamicApiFields.push("{!field.apiName}");
+      var type = "{!field.dataType}";
+      type=type.toUpperCase();
+      if(type == 'ID'){
+        type = 'STRING';
+      }
+      dynamicApiFieldTypes.push(type);
+      //////////alert(dynamicApiFieldTypes);
+      addMoreFields.push("{!field.apiName}");
+    </apex:repeat>
+  
+  $(document).ready(function(){
+   // updateUsageAnalytics('IB Dashboard');
+    init();
+    isDocumentReady = true;
+  });
+  
+  function init(){
+    addFixedSearchFields();
+    addDynamicSearchFields();
+    $('.cToDatePicker').datepicker();
+    $('.cFromDatePicker').datepicker();
+    $('.cToDatePicker').datepicker();
+    $('.cFromDatePicker').datepicker();
+      
+        
+            $(".column:contains('P1-')").css("background-color","red");
+            $(".column:contains('P1-')").css("color","white"); 
+            $(".column:contains('P2-')").css("background-color","Orange"); 
+            $(".column:contains('P2-')").css("color","white"); 
+            $(".column:contains('P3-')").css("background-color","green"); 
+            $(".column:contains('P3-')").css("color","white");    
+            $(".column:contains('No Action')").css("background-color","white");      
+  }  
+  
+  function updateHidden(obj,type){
+    if(type == 'tr'){
+       if($(obj).is(':checked')){
+         $(obj).parent().next().val(true);
+         $(obj).parent().parent().next().find('input:hidden').val(false);
+       }
+    }
+    else if (type == 'sr'){
+      if($(obj).is(':checked')){
+       $(obj).parent().next().val(true);
+       $(obj).parent().parent().prev().find('input:hidden').val(false);
+       }
+    }
+    return true;
+  }
+  
+  function checkBoxSelected(){
+   if($(':checkbox:checked').length ==0){
+     alert('Please select IB Assets to create opportunity.'); 
+     return false;
+   }
+   return true;
+  }
+  
+  function handleGoToPage(event,obj){
+     var keycode = (event.keyCode ? event.keyCode : event.which);
+      if(keycode == '13'){
+        if(!isNaN($(obj).val())){
+          if(parseInt($(obj).val()) > 0 && parseInt($(obj).val()) <= parseInt($('#idTotalPage').html())){
+            goToPage();
+          }
+          else{
+            $(obj).val($('#idCurrentPage').html());  
+            alert('Please enter valid page no to navigate'); 
+          }
+        }
+        else{
+          $(obj).val($('#idCurrentPage').html());  
+          alert('Please enter valid page no to navigate'); 
+        }
+        return false;
+      }
+  }
+  
+  function showPageSizeOptionList(){
+    var pos = $('.pageSizeArrow').position();
+    $('.pageSizeOptionList').css('top',(pos.top-80) + 'px');
+    $('.pageSizeOptionList').slideToggle();
+    $('.pageSizeArrow').toggleClass('pageSizeArrowPressed');
+  }
+    
+  function closePageSizeOptionList(){
+    $('.pageSizeOptionList').slideToggle();
+    $('.pageSizeArrow').removeClass('pageSizeArrowPressed');
+  }
+  
+  //difference between fixed and dycanic search fields
+  
+  function addFixedSearchFields(){
+      
+   	 var filterRow = $(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr');
+     var newFilterHeader ='<tr class="headerRow">';
+      newFilterHeader += '<th colspan="0" style="width:28px;">Filter</th>';
+      for(indx=0;indx<nFixedFields;indx++){
+        var newField;
+        if(fixedApiFieldTypes[indx]== 'INTEGER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="fixedColElement" colName="'+fixedApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(fixedApiFieldTypes[indx]== 'STRING'){
+         //alert('---- String'+    fixedApiFields[indx]);
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="fixedColElement" colName="'+fixedApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(fixedApiFieldTypes[indx]== 'OTHER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="fixedColElementSmall" colName="'+fixedApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(fixedApiFieldTypes[indx]== 'BOOLEAN'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;" >';
+          newField += '<span class="fixedColElement" colName="'+fixedApiFields[indx]+'">';
+          newField += '<select class="selectHeader" id="fixedCol'+indx +'" onchange="validateFilter(this,event);" size="1">';
+          newField += '<option value="All">All</option>';
+          newField += '<option value="True">True</option>';
+          newField += '<option value="False">False</option>';
+          newField += '</select>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(fixedApiFieldTypes[indx]== 'DATE' || fixedApiFieldTypes[indx]== 'DATETIME'){
+          //alert('---- DATE'+  fixedApiFields[indx]);
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="fixedColElement" colName="'+fixedApiFields[indx]+'">';
+          newField += '<span class="dpLabel">From:</span><input class="cToDatePicker" type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'-0"/><br/>';
+          newField += '<span class="dpLabel">To:</span><input class="cFromDatePicker" type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'-1"/><br/>';
+          newField += '</span>';
+          newField += '</th>';
+        } 
+        newFilterHeader += newField;
+      }
+      newFilterHeader += '</tr>'; 
+      filterRow.before(newFilterHeader);
+    }
+
+    function addDynamicSearchFields(){
+     var filterRow =  $(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr').next();
+     var indx = 1;
+      filterRow.find('th').each(function(){
+        var headerEle = $(this).find('div');
+        if(headerEle.html() == ''){
+          //headerEle.html(dynamicHeaderLabels[indx++]);
+        }
+      });
+      
+      var missingColumns = filterRow.find('th').length - filterRow.prev().find('th').length;
+	  for(indx=0;indx < missingColumns;indx++){
+        var newField;
+        if(dynamicApiFieldTypes[indx]== 'INTEGER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="customColElement" colName="'+dynamicApiFields[indx]+'">';;
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="customCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(dynamicApiFieldTypes[indx]== 'STRING'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="customColElement" colName="'+dynamicApiFields[indx]+'">';;
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="customCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(dynamicApiFieldTypes[indx]== 'OTHER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="customColElementSmall" colName="'+fixedApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="fixedCol'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(dynamicApiFieldTypes[indx]== 'BOOLEAN'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;" >';
+          newField += '<span class="customColElement" colName="'+dynamicApiFields[indx]+'">';
+          newField += '<select class="selectHeader" id="customCol'+indx +'" onchange="validateFilter(this,event);" size="1">';
+          newField += '<option value="All">All</option>';
+          newField += '<option value="True">True</option>';
+          newField += '<option value="False">False</option>';
+          newField += '</select>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(dynamicApiFieldTypes[indx]== 'DATE' || dynamicApiFieldTypes[indx]== 'DATETIME'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="customColElement" colName="'+dynamicApiFields[indx]+'">';
+          newField += '<span class="dpLabel">From:</span><input class="cToDatePicker" type="text" onkeyup="validateFilter(this,event);" id="customCol'+indx +'-0"/><br/>';
+          newField += '<span class="dpLabel">To:</span><input class="cFromDatePicker" type="text" onkeyup="validateFilter(this,event);" id="customCol'+indx +'-1"/><br/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        
+        if(newField != null && newField != ''){
+          filterRow.prev().append(newField);
+        }
+      }
+    }
+    
+    function restoreFilterValues(){
+	 var filterRow = $(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr');
+
+      fixedEnteredValues=$(document.getElementById('pgInstallBase:frmInstallBase:fixedSearchToRestore')).val().split("|");
+      
+      var indx=0;
+      
+      filterRow.find('.fixedColElement, .fixedColElementSmall').each(function(indx){
+        if(fixedApiFieldTypes[indx]== 'INTEGER'){
+          $(this).find('input').val(fixedEnteredValues[indx]);
+        }
+        else if(fixedApiFieldTypes[indx]== 'STRING'){
+          $(this).find('input').val(fixedEnteredValues[indx]);
+        }
+        else if(fixedApiFieldTypes[indx]== 'BOOLEAN'){
+          $(this).find('select>option').each(function(){
+           if($(this).val()== fixedEnteredValues[indx]){
+            $(this).attr('selected','selected');
+           }
+          });
+        }         
+         else if(fixedApiFieldTypes[indx]== 'OTHER'){
+          $(this).find('input').val(fixedEnteredValues[indx]);
+        }
+        else if(fixedApiFieldTypes[indx]== 'DATE' || fixedApiFieldTypes[indx]== 'DATETIME'){
+         var dateRange = fixedEnteredValues[indx].split('~');
+         $(this).find('input:first').val(dateRange[0]);
+         $(this).find('input:last').val(dateRange[1]);
+        }
+      });
+       
+  dynamicEnteredValues=$(document.getElementById('pgInstallBase:frmInstallBase:dynamicSearchToRestore')).val().split("|");
+
+      indx=0;
+      
+      filterRow.find('.customColElement, .customColElementSmall').each(function(indx){
+        if(dynamicApiFieldTypes[indx]== 'INTEGER'){
+          $(this).find('input').val(dynamicEnteredValues[indx]);
+        }
+        else if(dynamicApiFieldTypes[indx]== 'STRING'){
+          $(this).find('input').val(dynamicEnteredValues[indx]);
+        }
+
+        else if(dynamicApiFieldTypes[indx]== 'OTHER'){
+          $(this).find('input').val(dynamicEnteredValues[indx]);
+        }
+
+        else if(dynamicApiFieldTypes[indx]== 'BOOLEAN'){
+          $(this).find('select>option').each(function(){
+           if($(this).val()== dynamicEnteredValues[indx]){
+            $(this).attr('selected','selected');
+           }
+          });
+        }
+        else if(dynamicApiFieldTypes[indx]== 'DATE' || dynamicApiFieldTypes[indx]== 'DATETIME'){
+         var dateRange = dynamicEnteredValues[indx].split('~');
+         $(this).find('input:first').val(dateRange[0]);
+         $(this).find('input:last').val(dateRange[1]);
+        }
+      });
+
+      $('#' + activeElement).focus();
+    }
+    
+    function validateFilter(ctrl,event){
+      if($(ctrl).get(0).nodeName=='INPUT'){
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        if(keycode == '13'){
+          activeElement = $(ctrl).attr('id');
+          filterHelper();
+        }
+      }
+      else if($(ctrl).get(0).nodeName=='SELECT'){
+        filterHelper();
+      }
+      return false;
+    }
+    
+    function filterHelper(){
+
+
+      var fixedSearchText="";
+      var fixedSearchTextToRestore ="";   
+         
+      var dynamicSearchText="";
+      var dynamicSearchTextToRestore ="";
+          
+      $('.fixedColElement, .fixedColElementSmall').each(function(indx){
+        fixedSearchText += fixedApiFields[indx] + '.-~>' + fixedApiFieldTypes[indx]+ '.-~>';
+        var sVal;
+        if(fixedApiFieldTypes[indx] == 'INTEGER'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          fixedSearchText += sVal ;
+          fixedSearchTextToRestore += sVal ;
+         }
+        else if(fixedApiFieldTypes[indx] == 'STRING'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          fixedSearchText += sVal ;
+          fixedSearchTextToRestore += sVal ;
+         }
+
+         else if(fixedApiFieldTypes[indx] == 'OTHER' && fixedHeaderLabels[indx]=='Used GB (%)'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+           
+           if((sVal!='')) {
+             var isvalidnumber = validateNumber(sVal);
+           
+            if(!isvalidnumber){
+                  alert ('Enter a Valid Number in Used GB');
+                  $(this).find('input:last').val('');
+                  throw new Error('Enter a Valid Number in Used GB');
+              } else {
+               fixedSearchText += sVal ;
+               fixedSearchTextToRestore += sVal ;
+              }
+           }
+         }
+         else if(fixedApiFieldTypes[indx] == 'OTHER'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          fixedSearchText += sVal ;
+          fixedSearchTextToRestore += sVal ;
+         }
+         else if(fixedApiFieldTypes[indx] == 'BOOLEAN'){
+           sVal = $(this).find('select>option:selected').val();
+           fixedSearchText += sVal ;
+           fixedSearchTextToRestore += sVal;
+         }
+         else if(fixedApiFieldTypes[indx] == 'DATE' || fixedApiFieldTypes[indx] == 'DATETIME'){
+          var fromDt = $(this).find('input:first').val();
+          var toDt = $(this).find('input:last').val();
+          
+          var validFrom=validDate(fromDt);
+          var validTo=validDate(toDt);
+          
+          if( validFrom && validTo){
+              sVal = $(this).find('input:first').val() + '~' + $(this).find('input:last').val();
+              fixedSearchText += sVal ;
+              fixedSearchTextToRestore += sVal;
+          }
+          else{
+            if(!validFrom) {
+               
+              $(this).find('input:first').val('');
+              throw new Error('Invalid "from" date entered');
+            }
+            else if(!validTo){
+                 
+                $(this).find('input:last').val('');
+                throw new Error('Invalid "to" date entered');
+            }
+          }
+         }
+         fixedSearchTextToRestore += "|";
+         fixedSearchText += "|"; 
+       });
+       $('.customColElement, .customColElementSmall').each(function(indx){
+         dynamicSearchText += dynamicApiFields[indx] + '.-~>' + dynamicApiFieldTypes[indx]+ '.-~>';
+         var sVal;
+         if(dynamicApiFieldTypes[indx] == 'INTEGER'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.trim();
+          dynamicSearchText += sVal ;
+          dynamicSearchTextToRestore += sVal ;
+         }
+         else if(dynamicApiFieldTypes[indx] == 'STRING'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.trim();
+          dynamicSearchText += sVal ;
+          dynamicSearchTextToRestore += sVal ;
+         }
+
+         else if(dynamicApiFieldTypes[indx] == 'OTHER'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.trim();
+          dynamicSearchText += sVal ;
+          dynamicSearchTextToRestore += sVal ;
+         }
+
+         else if(dynamicApiFieldTypes[indx] == 'OTHER' && dynamicHeaderLabels[indx]=='Used GB (%)'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+           
+           if((sVal!='')) {
+             var isvalidnumber = validateNumber(sVal);
+           
+            if(!isvalidnumber){
+                  alert ('Enter a Valid Number in Used GB');
+                  $(this).find('input:last').val('');
+                  throw new Error('Enter a Valid Number in Used GB');
+              } else {
+              dynamicSearchText += sVal ;
+          dynamicSearchTextToRestore += sVal ;
+             
+              }
+           }
+         }
+
+         
+         else if(dynamicApiFieldTypes[indx] == 'BOOLEAN'){
+           sVal = $(this).find('select>option:selected').val();
+           dynamicSearchText += sVal ;
+           dynamicSearchTextToRestore += sVal;
+         }
+         else if(dynamicApiFieldTypes[indx] == 'DATE' || dynamicApiFieldTypes[indx] == 'DATETIME'){
+          var fromDt = $(this).find('input:first').val();
+          var toDt = $(this).find('input:last').val();
+          
+          var validFrom=validDate(fromDt);
+          var validTo=validDate(toDt);
+          
+          if( validFrom && validTo){
+              sVal = $(this).find('input:first').val() + '~' + $(this).find('input:last').val();
+              dynamicSearchText += sVal ;
+              dynamicSearchTextToRestore += sVal;
+          }
+          else{
+            if(!validFrom) {
+             
+              $(this).find('input:first').val('');
+              throw new Error('Invalid "from" date entered');
+            }
+            else if(!validTo){
+                
+                $(this).find('input:last').val('');
+                throw new Error('Invalid "to" date entered');
+            }
+          }
+         }
+         dynamicSearchTextToRestore += "|";
+         dynamicSearchText += "|";   
+      });
+      applyFilter(fixedSearchText,dynamicSearchText);    
+       $(document.getElementById('pgInstallBase:frmInstallBase:fixedSearchToRestore')).val(fixedSearchTextToRestore);
+       $(document.getElementById('pgInstallBase:frmInstallBase:dynamicSearchToRestore')).val(dynamicSearchTextToRestore);
+       return false;
+    }
+    
+    function validateNumber(n) {
+     return !isNaN(parseFloat(n)) && isFinite(n);
+   }
+  
+  function validDate(val){
+        var valid= false;
+        if(val.length==0){
+          valid=true;
+        }
+        else if(val.length >7 && validateUSDate(val)){
+            valid= true;
+        }
+        return valid;
+    }
+    
+    function validateUSDate( strValue ) {
+          var objRegExp = /^\d{1,2}(\-|\/|\.)\d{1,2}\1\d{4}$/
+          
+          //check to see if in correct format
+          if(!objRegExp.test(strValue))
+            return false; //doesn't match pattern, bad date
+          else{
+            var strSeparator = strValue.substring(2,3) 
+            var arrayDate = strValue.split(strSeparator); 
+            //create a lookup for months not equal to Feb.
+            var arrayLookup = { '01' : 31,'03' : 31, 
+                                '04' : 30,'05' : 31,
+                                '06' : 30,'07' : 31,
+                                '08' : 31,'09' : 30,
+                                '10' : 31,'11' : 30,'12' : 31}
+            var intDay = parseInt(arrayDate[1],10); 
+        
+            //check if month value and day value agree
+            if(arrayLookup[arrayDate[0]] != null) {
+              if(intDay <= arrayLookup[arrayDate[0]] && intDay != 0)
+                return true; //found in lookup table, good date
+            }
+            
+            var intMonth = parseInt(arrayDate[0],10);
+            if (intMonth == 2) { 
+               var intYear = parseInt(arrayDate[2]);
+               if (intDay > 0 && intDay < 29) {
+                   return true;
+               }
+               else if (intDay == 29) {
+                 if ((intYear % 4 == 0) && (intYear % 100 != 0) || 
+                     (intYear % 400 == 0)) {
+                      // year div by 4 and ((not div by 100) or div by 400) ->ok
+                     return true;
+                 }   
+               }
+            }
+          }  
+          return false; //any other values, bad date
+        }
+
+     function addRemoveRules(){ 
+          window.setTimeout(showAddRemoveAction,100);
+      }   
+
+// --------------------------JS for Views Start----------------------------------------------------------------------------------------------------------//
+   
+   function clearFilterJS(){
+      $(document.getElementById('pgInstallBase:frmInstallBase:fixedSearchToRestore')).val('');
+      $(document.getElementById('pgInstallBase:frmInstallBase:dynamicSearchToRestore')).val('');
+      clearFilter();
+   }   
+
+   function showViewOptions(obj){
+
+      var pos = $(obj).position();
+
+      var lft = pos.left;
+
+      var tp = pos.top + $(obj).outerHeight();
+
+      $('#idViewOptions').css('left',lft + 'px').css('top',tp + 'px').show();
+   }
+ 
+    var newPopup;
+    var popupURL = "/apex/IB_CNSL_Edit_VP?";
+    var popupWidth = 550;
+    var popupHeight = 500;
+    var popupLeft = (screen.width / 2) - (popupWidth / 2);
+    var popupTop = (screen.height / 2) - (popupHeight / 2);
+   
+    function openAddColumnsPopup(){
+        newPopup = window.open(popupURL, '',
+       'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,copyhistory=no,width='
+       + popupWidth + ',height=' + popupHeight + ',top=' + popupTop + ',left=' + popupLeft);
+     }
+ 
+    function findPosY(obj){ 
+        var curtop = 0; 
+        if(obj.offsetParent)  
+          while(1){ 
+            curtop += obj.offsetTop;  
+              if(!obj.offsetParent) 
+               break;  
+               obj = obj.offsetParent; 
+          } 
+        else if(obj.x)  
+            curtop += obj.x;    
+        return curtop;
+    }
+
+   function getAddMoreFields(){
+
+     return addMoreFields;
+
+    }
+
+    
+
+    
+
+    function modifyViewJS(colList){
+    addMoreFields = [];
+
+     var cols = colList.split(',');
+
+     for(i=0;i<cols.length;i++){
+
+      if(cols[i] !=""){
+
+      addMoreFields.push(cols[i]);
+      }
+
+     }
+  
+     
+     modifyView(colList);
+
+    
+     
+     
+    }
+
+     function loadPreviousViewJS(){
+      var savedViewId = $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option:selected').val();
+      loadPreviousView(savedViewId);      
+    }
+
+    function saveCurrentViewJS(){
+
+      var colList='';
+
+      for(i=0;i<addMoreFields.length;i++){
+
+        colList += addMoreFields[i] + ',';
+
+      }
+
+      colList = colList.substring(0,colList.length-1);
+
+      var viewId = $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option:selected').val();
+       var viewNm = $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option:selected').text();
+ 
+       if(viewId != null && viewId != '' && viewNm != '---Select View---'){
+ 
+         saveCurrentView(colList,viewId);
+ 
+       }
+ 
+       else{
+ 
+         saveAsCurrentViewJS();
+ 
+       }
+
+    }
+
+    
+
+    function viewNameExists(viewNm){
+
+      var bFound = false;
+
+      $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option').each(function(){
+
+        if($(this).text() == viewNm){
+
+          bFound = true;
+
+          return;
+
+        }
+
+      });
+
+      return bFound;
+
+    }
+
+    
+
+    function viewNamePrompter(){
+
+      var viewName;
+
+      viewName = prompt("Please Enter View Name.");
+
+    
+
+      if(viewName == ''){
+
+        alert("Please Enter View Name to Save Current View.");
+
+        return null;
+
+      }
+
+      
+
+      while(viewName != null && viewNameExists(viewName)){
+
+        alert("View Name already exists, Please Enter other name");
+
+        viewName = prompt("Please Enter View Name.");
+
+      }
+
+      
+
+      while(viewName != null && viewName.length > 30){
+
+        alert("View Name is too large. Please try to keep it smaller");
+
+        viewName = prompt("Please Enter View Name.", viewName);
+
+      }
+
+      
+
+      return viewName;
+
+    }
+
+        
+
+    function saveAsCurrentViewJS(){
+
+      var viewName = viewNamePrompter();
+
+      if(viewName != null){
+
+          var colList='';
+
+          for(i=0;i<addMoreFields.length;i++){
+
+            colList += addMoreFields[i] + ',';
+
+          }
+
+          colList = colList.substring(0,colList.length-1);
+
+          saveAsCurrentView(colList,viewName,'');
+
+     
+     
+     
+      }
+
+    }
+
+    
+
+    function deleteCurrentViewJS(){
+
+      var deleteIt = confirm("Are you sure to delete the current view.");
+
+      if (deleteIt != 1) {
+
+          return;
+
+      }
+
+        
+
+      var viewId = $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option:selected').val();
+
+      var viewNm = $(document.getElementById('pgInstallBase:frmInstallBase:savedView')).find('option:selected').text();
+
+      if(viewNm == '---Select View---'){
+
+        var result = confirm("Default View can't be deleted,\n It will reset on deletion.");
+        return;
+	}
+
+      if(viewId == null || viewId == ''){
+
+        alert('Please Select View to delete.');
+
+        return;
+
+      }
+
+      deleteCurrentView(viewId);
+
+    }
+//--------------------------------------------JS for VIEWS Ends-------------------------------------------------------------------------------------//
+</script>
+		<apex:pageMessages />
+		<apex:form id="frmInstallBase">
+			<apex:actionFunction name="showAddRemoveAction"
+				action="{!showAddRemove}" />
+
+			<apex:actionFunction action="{!applySorting}" name="applySorting"
+				reRender="upperPnl" status="sortStatus">
+				<apex:param name="sortField" value="" assignTo="{!sortField}" />
+			</apex:actionFunction>
+
+			<apex:actionFunction action="{!updatePageSize}" name="updatePageSize"
+				reRender="upperPnl" status="updatePageSizeStatus">
+				<apex:param name="ResultsPerPage" value=""
+					assignTo="{!ResultsPerPage}" />
+			</apex:actionFunction>
+
+			<apex:actionFunction action="{!applyFilter}" name="applyFilter"
+				reRender="upperPnl" status="filterStatus">
+				<apex:param assignTo="{!fixedSearch}" name="fixedSearch" value="" />
+				<apex:param assignTo="{!dynamicSearch}" name="dynamicSearch"
+					value="" />
+			</apex:actionFunction>
+
+			<apex:actionFunction action="{!goToPage}" name="goToPage"
+				reRender="upperPnl" status="pageNavigationStatus" />
+			<apex:actionFunction action="{!prevPage}" name="prevPage"
+				reRender="upperPnl" status="pageNavigationStatus" />
+			<apex:actionFunction action="{!nextPage}" name="nextPage"
+				reRender="upperPnl" status="pageNavigationStatus" />
+			<apex:actionFunction action="{!firstPage}" name="firstPage"
+				reRender="upperPnl" status="pageNavigationStatus" />
+			<apex:actionFunction action="{!lastPage}" name="lastPage"
+				reRender="upperPnl" status="pageNavigationStatus" />
+
+			<!-- Action function for View starts -->
+
+
+			<apex:actionfunction action="{!clearFilter}" name="clearFilter"
+				rerender="headerPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="clearFilterStatus" />
+
+			<apex:actionFunction action="{!saveCurrentView}"
+				name="saveCurrentView"
+				rerender="headerPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="saveCurrentViewStatus">
+
+				<apex:param assignTo="{!moreColumns}" value="" name="moreColumnsId" />
+
+				<apex:param assignTo="{!savedViewId}" name="savedViewId" value="" />
+
+			</apex:actionFunction>
+
+			<apex:actionfunction action="{!saveCurrentView}"
+				name="saveAsCurrentView"
+				rerender="headerPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="saveCurrentViewStatus">
+				<apex:param assignto="{!moreColumns}" value="" name="moreColumnsId" />
+				<apex:param assignto="{!saveAsViewName}" value=""
+					name="saveAsViewName" />
+				<apex:param assignto="{!savedViewId}" name="savedViewId" value="" />
+			</apex:actionfunction>
+
+			<apex:actionFunction action="{!deleteCurrentView}"
+				name="deleteCurrentView"
+				rerender="headerPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="deleteCurrentViewStatus">
+				<apex:param assignTo="{!savedViewId}" name="savedViewId" value="" />
+			</apex:actionFunction>
+ 
+			<apex:actionFunction action="{!modifyView}" name="modifyView"
+				rerender="headerPnl, headerOuterPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="objTypeChangeStatus">
+ 				<apex:param assignTo="{!moreColumns}" value="" name="moreColumnsId" />
+ 			</apex:actionFunction>
+
+			<apex:actionfunction action="{!loadPreviousViewData}"
+				name="loadPreviousView"
+				rerender="headerPnl, headerOuterPnl, upperPnl, lowerOuterPnl, hiddenSearchToRestore"
+				status="loadCurrentViewStatus">
+				<apex:param name="savedViewId" value="" assignto="{!savedViewId}" />
+			</apex:actionfunction>
+
+			<apex:actionFunction action="{!changeView}" name="changeView"
+				rerender="headerPnl,upperPnl,lowerOuterPnl"
+				status="objTypeChangeStatus">
+ 				<apex:param assignTo="{!selectedView}" value="" name="selectedView" />
+ 			</apex:actionFunction>
+ 
+ 			<!-- Action function for View Ends -->
+
+			<apex:outputPanel id="mainPnlInstallBase" layout="block" style="padding-top:10px;">
+
+				<apex:outputPanel id="headerOuterPnl">
+					<!--<img title="Quote" id="idPageTitleIcon" class="pageTitleIcon" alt="Quote" src="/s.gif" style="margin-top:-5px;"/>-->
+					<apex:outputPanel id="headerPnl">
+						<apex:outputPanel style="padding-top:4px;padding-bottom:4px;padding-left:0px;"
+							layout="block">
+							<div id="idViewOptions"  style="display: none; margin: 1px 0px 0px 2px;">
+
+							<div class="newQuoteOption">
+							<span style="float: left;" onclick="$('#idViewOptions').hide(); saveCurrentViewJS();">Save Current View</span> 
+							<span style="float: right; font-weight: bold;" onclick="$('#idViewOptions').hide();">x</span>
+
+							<div style="clear: both;" /></div>
+
+							<div style="clear: both;" class="newQuoteOption"  onclick="$('#idViewOptions').hide(); saveAsCurrentViewJS();">Save View As</div>
+
+							<div class="newQuoteOption"  onclick="$('#idViewOptions').hide(); deleteCurrentViewJS();">Delete Current View</div>
+
+							<div style="border-top: 1px solid gray; margin: 2px 14px 2px 7px;"></div>
+
+						</div>
+					    <div id="contentLoaded" class="selectObject">
+                       <!---   Div for Views Start     -->
+ 
+						<table>
+								<tr>
+									<td>
+									   <img title="Quote" id="idPageTitleIcon"  class="pageTitleIcon" alt="Quote" src="/s.gif"  style="margin-left: 0px;" /> 
+										<span class="selectObjectLabel">Views:</span>
+
+									<apex:selectList value="{!savedViewId}" multiselect="false" size="1" id="savedView" onchange="loadPreviousViewJS();">
+    									<apex:selectOptions value="{!savedViews}" />
+ 									</apex:selectList> 
+ 									
+ 									<input id="viewOptionsBtn" type="button" class="btn" value="View Options" onclick="showViewOptions(this); return false;" /> 
+									&nbsp; 
+									<input type="button" class="btn"  value="Edit Rule(s)" onclick="addRemoveRules();" />
+									<apex:outputPanel style="padding-bottom:6px;text-align:left;height:15px;" layout="block" id="indicator">
+
+										<!-- Action status for Views type start -->
+
+										<apex:actionstatus id="loadCurrentViewStatus">
+
+											<apex:facet name="start">
+												<span style="color: red; font-weight: bold; padding-left: 5px;">Loading View...</span>
+ 												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+
+										</apex:actionstatus>
+
+										<apex:actionstatus id="saveCurrentViewStatus">
+
+											<apex:facet name="start">
+ 												<span style="color: red; font-weight: bold; padding-left: 5px;">Saving View...</span>
+
+												<img src="/img/loading.gif" alt=" " />
+
+											</apex:facet>
+										</apex:actionstatus>
+										
+										<apex:actionstatus id="deleteCurrentViewStatus">
+
+											<apex:facet name="start">
+
+												<span
+													style="color: red; font-weight: bold; padding-left: 5px;">Deleting View ...</span>
+     												<img src="/img/loading.gif" alt=" " />
+
+											</apex:facet>
+
+										</apex:actionstatus>
+ 										<apex:actionstatus id="objTypeChangeStatus">
+
+											<apex:facet name="start">
+
+												<span
+													style="color: red; font-weight: bold; padding-left: 5px;">Loading...</span>
+
+												<img src="/img/loading.gif" alt=" " />
+
+											</apex:facet>
+
+										</apex:actionstatus>
+
+
+										<!-- Action status for Views type End -->
+
+
+
+										<apex:actionstatus id="createOptyStatus">
+											<apex:facet name="start">
+												<span style="color: red; font-weight: bold;">Creating
+												Opportunity(s)...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+										<apex:actionstatus id="sortStatus">
+											<apex:facet name="start">
+												<span
+													style="color: red; font-weight: bold; padding-left: 5px;">Applying
+												Sorting...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+										<apex:actionstatus id="filterStatus">
+											<apex:facet name="start">
+												<span style="color: red; font-weight: bold; padding-left: 5px;">Applying Filter...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+										<apex:actionstatus id="loadStatus">
+											<apex:facet name="start">
+												<span
+													style="color: red; font-weight: bold; padding-left: 5px;">Loading...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+									</apex:outputPanel></td>
+								</tr>
+							</table>
+
+							</div>
+						</apex:outputPanel>
+
+
+					</apex:outputPanel>
+					<apex:outputPanel id="headerScriptPnl">
+
+					</apex:outputPanel>
+				</apex:outputPanel>
+
+
+				<apex:outputlink target="_top" value="/{!wfId}">
+            Rules For  <apex:outputText value=" {!wfName}"></apex:outputText>
+				</apex:outputlink>
+				<apex:pageBlock id="pbInstallBase">
+  
+					<apex:outputLink ></apex:outputLink>
+					 <apex:pageBlockButtons style="align=left" location="top">
+           
+                            <div id="smartSearchStatusContainer" style="height:20px;padding-bottom: 8px;padding-left: 2px;">
+                              <span style="">  <input id="clearFilterBtn" type="button" class="btn" value="Clear Filter" onclick="clearFilterJS();" style="align:left"/>  </span>
+                              <apex:actionstatus id="clearFilterStatus">
+                              <apex:facet name="start">
+                              <span style="color:red;font-weight:bold;">Clearing Filter...</span>
+                              <img src="/img/loading.gif" alt=" "/>
+                              </apex:facet>
+                              </apex:actionstatus> 
+                           </div>
+                   </apex:pageBlockButtons>
+        
+					<apex:outputPanel id="upperOuterPnl" layout="block">
+						<apex:outputPanel id="upperPnl" layout="block">
+							<div id="sSOQL" style="display: none;">{!sSOQL}</div>
+
+                	<apex:pageBlockTable value="{!lstInstallBaseWrapper}" var="rec" id="pbtInstallBase" style="table-layout=fixed;width:100%;">
+								<apex:column > </apex:column>
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter" onclick="applySorting('Order__c');"
+											title="Order"><span class="headerLabel">Order</span> 
+											<img  class="ascDesc" src="{!IF(sortField = 'Order__c',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlabel value="{!rec.InstallBase.Order__c}"  style="width: 55px;"></apex:outputlabel>
+								</apex:column>
+
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter" onclick="applySorting('Name');" title="Rule Name">
+										   <span class="headerLabel">Rule Name</span> 
+										   <img class="ascDesc"  src="{!IF(sortField = 'Name',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlink target="_top" value="/{!rec.InstallBase.Id}">
+										<apex:outputText value="{!rec.InstallBase.Name}" style="width: 20px;"></apex:outputText>
+									</apex:outputlink>
+								</apex:column>
+								
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter"  onclick="applySorting('Evaluation_Rule__c');" title="Evaluation">
+											<span class="headerLabel">Evaluation</span>
+										    <img class="ascDesc" src="{!IF(sortField = 'Evaluation_Rule__c',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlabel value="{!rec.Evaluation}"  style="width: 10px;"></apex:outputlabel>
+								</apex:column>
+
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter"  onclick="applySorting('Execution_Behavior__c');" title="Execution">
+											<span class="headerLabel">Execution</span>
+										    <img class="ascDesc"  src="{!IF(sortField = 'Execution_Behavior__c',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlabel value="{!rec.Execution}" style="width: 20px;"></apex:outputlabel>
+								</apex:column>
+
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter"  onclick="applySorting('DisplayfilterLogic__c');" title="Criteria">
+											<span class="headerLabel">Criteria</span>
+										    <img class="ascDesc" src="{!IF(sortField = 'DisplayfilterLogic__c',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlink target="_top"  value="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!rec.InstallBase.Id}">
+										<apex:outputText value="{!rec.Criteria}"  title="{!rec.DisplayCriteria}" style="width: 25px;"></apex:outputText>
+									</apex:outputlink>
+								</apex:column>
+
+								<apex:column >
+									<apex:facet name="header">
+										<div class="headerOuter"  onclick="applySorting('DisplayActions__c');" title="Actions">
+										  <span class="headerLabel">Actions</span> 
+										  <img class="ascDesc" src="{!IF(sortField = 'DisplayActions__c',IF(isAsc = true,$Resource.actionImages+'/down.png',$Resource.actionImages+'/up.png'),'/s.gif')}" />
+										</div>
+									</apex:facet>
+									<apex:outputlink target="_top"  value="/apex/AW_RuleDetail_VF?id={!rec.InstallBase.Id}">
+										<apex:outputText value="{!rec.Actions}" style="width: 25px;"  title="{!rec.DisplayActions}"></apex:outputText>
+									</apex:outputlink>
+								</apex:column>
+							
+						</apex:pageBlockTable>
+
+							<apex:outputPanel rendered="{!NOT(lstInstallBaseWrapper.size==0)}">
+								<table style="width: 1000px;" id="tblPaginator">
+									<tr>
+										<td align="left" width="33%">
+										  <div style="padding-top: 10px;">
+										   <span id="pageDetails">  {!showingFrom} - {!showingTo} of {!totalResults} 
+										       <apex:outputPanel rendered="{!moreThan1000}">+</apex:outputPanel> 
+										    </span>
+										<div style="display: none;" class="pageSizeOptionList">
+										<div class="pageSizeListCloseBtn" onclick="closePageSizeOptionList();">X</div>
+										<div onclick="closePageSizeOptionList();updatePageSize(10);return false;" class="pageSizeOption{!IF(ResultsPerPage==10,' pageSizeOptionSelected','')}"> Display <span>&nbsp;&nbsp;10</span> Records Per Page</div>
+										<div onclick="closePageSizeOptionList();updatePageSize(25);return false;" class="pageSizeOption{!IF(ResultsPerPage==25,' pageSizeOptionSelected','')}"> Display <span>&nbsp;&nbsp;25</span> Records Per Page</div>
+										<div onclick="closePageSizeOptionList();updatePageSize(50);return false;" class="pageSizeOption{!IF(ResultsPerPage==50,' pageSizeOptionSelected','')}"> Display <span>&nbsp;&nbsp;50</span> Records Per Page</div>
+										<div onclick="closePageSizeOptionList();updatePageSize(100);return false;" class="pageSizeOption{!IF(ResultsPerPage==100,' pageSizeOptionSelected','')}"> Display <span>100</span> Records Per Page</div>
+										</div>
+										<img src="/s.gif" class="pageSizeArrow"
+											onclick="showPageSizeOptionList();" /> <apex:actionstatus id="updatePageSizeStatus">
+											<apex:facet name="start">
+												<span  style="color: red; font-weight: bold; padding-left: 5px;">Updating page size... </span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+										</div>
+										<apex:outputPanel layout="block" rendered="{!moreThan1000}"  style="font-weight: bold;padding-top: 10px;">
+											<span style="color: red;"> 
+										    	More than 1000 records returned. <br />
+											   Please use filters to limt no of records. 
+											</span>
+										</apex:outputPanel>
+										</td>
+										<td width="34%">
+										   <div class="pageNavigation">
+										      <span class="prevNextLinks">
+									            	<apex:outputPanel styleclass="prevNext" rendered="{!hasFirstPage}">
+											            <a href="javascript:firstPage();"> 
+											            <img class="firstPage"  src="/s.gif" />
+											             </a>
+										</apex:outputPanel> 
+										<apex:outputPanel styleclass="prevNext"  rendered="{!!hasFirstPage}">
+											<img class="firstPageOff" src="/s.gif" />
+										</apex:outputPanel> 
+										
+										<apex:outputPanel styleclass="prevNext"  rendered="{!hasPrevPage}">
+										   <a href="javascript:prevPage();"> 
+											<img class="prevPage"  src="/s.gif" /> 
+											Previous 
+											</a>
+										 </apex:outputPanel> 
+										 <apex:outputPanel styleclass="prevNext" rendered="{!!hasPrevPage}">
+											<img class="prevPageOff" src="/s.gif" />
+                                            Previous
+                                         </apex:outputPanel> 
+                                       
+                                         <apex:outputPanel styleclass="prevNext"  rendered="{!hasNextPage}"> 
+											<a href="javascript:nextPage();"> 
+											  Next
+											 <img class="nextPage" alt="Next" title="Next" src="/s.gif" /> </a>
+										  </apex:outputPanel> 
+										  <apex:outputPanel styleclass="prevNext" rendered="{!!hasNextPage}">                            
+                                               Next
+                                               <img class="nextPageOff" alt="Next"
+												title="Next" src="/s.gif" />
+										  </apex:outputPanel> 
+										  
+										  <apex:outputPanel styleclass="prevNext"
+											rendered="{!IF(!moreThan1000 && hasLastPage ,true,false)}">
+											<a href="javascript:lastPage();"> <img class="lastPage"
+												alt="Last Page" title="Last Page" src="/s.gif" /> </a>
+										</apex:outputPanel> 
+										<apex:outputPanel styleclass="prevNext"  rendered="{!IF(!moreThan1000 && !hasLastPage ,true,false)}">
+											<img class="lastPageOff" alt="Last Page" title="Last Page" src="/s.gif" />
+										</apex:outputPanel> 
+										
+										 <apex:outputPanel styleclass="prevNext"  rendered="{!moreThan1000}">
+											<img class="lastPageOff" alt="Last Page" title="Last Page" src="/s.gif" />
+										  </apex:outputPanel> 
+										 </span>
+										</div>
+										
+										<div style="text-align: center; padding-top: 4px;">
+										<apex:actionstatus id="pageNavigationStatus">
+											<apex:facet name="start">
+												<span style="color: red; font-weight: bold;">Navigating...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										</apex:actionstatus>
+										 <apex:actionstatus id="FetchingOpportunities">
+											<apex:facet name="start">
+												<span style="color: red; font-weight: bold;">Fetching Records...</span>
+												<img src="/img/loading.gif" alt=" " />
+											</apex:facet>
+										  </apex:actionstatus>
+										 </div>
+										</td>
+										<td align="right" width="33%">
+										   <div style="padding-top: 10px;">Page&nbsp; 
+										     <apex:outputPanel style="display:{!IF(moreThan1000,'','none')}">  <span id="idCurrentPage">{!currentPage}</span> </apex:outputPanel> 
+										     <apex:outputPanel rendered="{!!moreThan1000}">
+											    <apex:inputText value="{!pageNumber}" onkeypress="return handleGoToPage(event,this);" style="width:25px;text-align: center;" />
+										     </apex:outputPanel> 
+										     <apex:outputPanel rendered="{!!moreThan1000}">&nbsp;of <span id="idTotalPage">{!totalPage}</span> </apex:outputPanel>
+										     </div>
+										</td>
+									</tr>
+								</table>
+							</apex:outputPanel>
+							<apex:outputPanel id="upperScriptPnl">
+		<script>
+               if(isDocumentReady){ 
+              	 dynamicHeaderLabels=[];
+                dynamicApiFields=[];
+                dynamicApiFieldTypes=[];
+               addMoreFields = [];
+                <apex:repeat value="{!dynamicFieldDetails}" var="field" >
+             
+                 dynamicHeaderLabels.push("{!field.label}");
+                 dynamicApiFields.push("{!field.apiName}");
+                 var type = "{!field.dataType}";
+                 type=type.toUpperCase();
+                 if(type == 'ID'){
+                   type = 'STRING';
+                 }
+                 dynamicApiFieldTypes.push(type);
+                 addMoreFields.push("{!field.apiName}");
+               </apex:repeat>
+             
+                   if($(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr').length ==1){
+                    addFixedSearchFields();
+                   }
+					addDynamicSearchFields();
+                   $('.cToDatePicker').datepicker();
+                   $('.cFromDatePicker').datepicker();
+
+                    $(".column:contains('P1-')").css("background-color","red");
+                    $(".column:contains('P1-')").css("color","white"); 
+                    $(".column:contains('P2-')").css("background-color","Orange"); 
+                    $(".column:contains('P2-')").css("color","white"); 
+                    $(".column:contains('P3-')").css("background-color","green"); 
+                    $(".column:contains('P3-')").css("color","white");    
+                    $(".column:contains('No Action')").css("background-color","white");    
+                   restoreFilterValues();
+               
+             }
+          </script>
+    	</apex:outputPanel>
+    </apex:outputPanel>
+    
+ </apex:outputPanel>
+
+</apex:pageBlock>
+
+				<script type="text/javascript">
+            if(isDocumentReady){ 
+           //alert ('script 2332');
+             
+               dynamicHeaderLabels=[];
+                dynamicApiFields=[];
+                dynamicApiFieldTypes=[];
+               addMoreFields = [];
+               //////alert ("{!dynamicFieldDetails}");
+               <apex:repeat value="{!dynamicFieldDetails}" var="field" >
+             
+                 dynamicHeaderLabels.push("{!field.label}");
+                 dynamicApiFields.push("{!field.apiName}");
+                 var type = "{!field.dataType}";
+                 type=type.toUpperCase();
+                 if(type == 'ID'){
+                   type = 'STRING';
+                 }
+                 dynamicApiFieldTypes.push(type);
+                 addMoreFields.push("{!field.apiName}");
+               </apex:repeat>
+             
+                   if($(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr').length ==1){
+                    addFixedSearchFields();
+                   }
+				   addDynamicSearchFields();
+                   $('.cToDatePicker').datepicker();
+                   $('.cFromDatePicker').datepicker();
+                   restoreFilterValues();
+               
+             }
+      </script>
+			</apex:outputPanel>
+
+			<apex:outputPanel id="hiddenSearchToRestore">
+				<apex:inputHidden value="{!fixedSearchToRestore}"
+					id="fixedSearchToRestore" />
+				<apex:inputHidden value="{!dynamicSearchToRestore}"
+					id="dynamicSearchToRestore" />
+			</apex:outputPanel>
+
+			<apex:outputpanel id="idLoadPreviousViewContents">
+				<span id="idPreviousViewSelectedColumns" style="display: none">{!moreColumns}</span>
+				<script>
+        if(isDocumentReady){
+          addMoreFields = [];
+          var colList = $('#idPreviousViewSelectedColumns').html();
+                var cols = colList.split(',');
+                for(i=0;i<cols.length;i++){
+                 if(cols[i] !=""){
+                  addMoreFields.push(cols[i]);
+                 }
+                }
+        }
+      </script>
+			</apex:outputpanel>
+	</apex:form>
+</apex:page>

@@ -3,16 +3,671 @@ Name : AW_AddRulesToWorkflow_VF
 Created By : Appirio   [Peter Babalis]
 Created Date : 20 Dec 2013
 Purpose : Custom  page to add ruless to AWE
-********************************************************************************* --><apex:page standardController="Advance_Workflow__c" extensions="AW_AddRulesToWorkflowController" tabStyle="Advance_Workflow__c">
-    <apex:form >
+********************************************************************************* -->
+<apex:page standardController="Advance_Workflow__c" extensions="AW_AddRulesToWorkflowController" tabStyle="Advance_Workflow__c" id="pgInstallBase">
+<apex:form id="frmInstallBase">
+<style>
+div.centered {
+	margin-left: 10px;
+	text-align: left;
+}
+div.centered table 
+{
+    margin-left:50px;
+    text-align: left;
+}
+.headerTextBox {
+	width: 100px;
+}
+.headerTextBox>span {
+	display: block;
+}
+.headerTextBoxSmall {
+	width: 50px;
+}
+.headerTextBoxSmall>span {
+	display: block;
+}
+.ColElement>input {
+	width: 100px;
+}
+
+.ColElementSmall>input{
+	width: 30px;
+}
+
+.bPageBlock>pbTitle,.mainTitle {
+	width: 120px;
+}
+
+.bPageBlock .pbTitle {
+	vertical-align: middle;
+	color: rgb(34, 34, 34);
+	font-size: 91%;
+	width: 5%;
+	margin: 0px;
+}
+
+.btnPanel { /*padding-top:10px;
+    text-align:center;*/
+	padding-left: 300px;
+}
+
+.btnPanel input.btn {
+	margin-right: 10px !important;
+}
+
+.viewLabel {
+	font-weight: bold;
+	font-size: 120%;
+	padding-right: 5px;
+}
+
+.customRequired {
+	display: inline-block;
+	background-color: #CC0000;
+	width: 3px;
+	height: 20px;
+	margin-right: 1px;
+	position: relative;
+	vertical-align: top;
+}
+
+.errorMsg {
+	color: red;
+	text-align: left;
+	padding-bottom: 10px;
+}
+
+.dpLabel {
+	width: 32px;
+	display: inline-block;
+	text-align: right;
+	padding-right: 2px;
+}
+
+.datePicker {
+	z-index: 110;
+}
+
+.headerOuter {
+	cursor: pointer;
+	white-space: normal;
+	word-wrap: break-word;
+}
+
+.headerLabel { /*float:left;*/
+	word-wrap: break-word;
+}
+
+
+.list .headerRow th {
+	white-space: normal;
+}
+
+.column {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	width: 100px;
+}
+</style>
+
+	<style>
+.headerTextBox {
+	text-align: center;
+}
+
+body .fewerMore {
+	display: none;
+}
+
+.selectHeader {
+	height: 18px;
+	width: 100px;
+}
+
+.heightlightLabel {
+	font-weight: bold;
+	padding: 2px 8px 2px 8px;
+}
+
+.heightlightValue {
+	background-color: orange;
+	padding: 2px;
+	display: inline-block;
+	width: 145px;
+	/*height:15px;*/
+}
+
+.dpLabel {
+	width: 40px;
+	display: inline-block;
+	text-align: right;
+	padding-right: 2px;
+}
+
+.newQuoteOption {
+	padding: 2px 6px 2px 8px;
+	cursor: pointer;
+}
+
+.newQuoteOption:hover {
+	background-color: #e3f3ff;
+}
+
+#idMask {
+	position: absolute;
+	z-index: 101;
+	background-color: black;
+	left: 0px;
+	top: 0px;
+}
+
+#idNewQuoteOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 145px;
+}
+
+#idViewOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 145px;
+}
+
+#idMsg {
+	position: absolute;
+	z-index: 102;
+	background-color: transparent;
+	left: 0px;
+	top: 0px;
+}
+
+#idMsgContents {
+	position: absolute;
+	float: left;
+	background-color: white;
+	height: auto;
+	width: 500px;
+	-moz-border-radius: 15px;
+}
+
+#idActionOptions {
+	-moz-border-radius: 4px 4px 4px 4px;
+	background-color: #ffffff;
+	border: 1px solid gray;
+	position: absolute;
+	z-index: 100;
+	padding: 4px 0;
+	width: 175px;
+}
+
+.newActionOption {
+	padding: 2px 6px 2px 8px;
+	cursor: pointer;
+}
+
+.newActionOption:hover {
+	background-color: #e3f3ff;
+}
+
+.dialogHeader {
+	height: 25px;
+	width: auto;
+	-moz-border-radius: 15px 15px 0 0;
+	background-color: #EAEAEA;
+	padding: 8px 8px 5px;
+}
+
+.dialogBody {
+	clear: both;
+	padding-top: 15px;
+	height: 100%;
+	width: auto;
+	padding: 8px 18px 8px 10px;
+}
+
+.closeBtn {
+	float: right;
+	font-weight: bold;
+	font-size: 18px;
+	cursor: pointer;
+	background-image: url("/img/ple/pletool_sprite.gif");
+	background-position: 0 0;
+	background-repeat: no-repeat;
+	width: 20px;
+	height: 18px;
+}
+
+.title {
+	font-weight: bold;
+	font-size: 16px;
+	padding-left: 8px;
+}
+
+.optionLabel {
+	width: 23%;
+	font-weight: bold;
+}
+
+.optionDisplay {
+	padding-bottom: 3px;
+	padding-left: 5px;
+	padding-top: 3px;
+}
+
+.datePicker {
+	z-index: 110;
+}
+</style>
+
+	<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/themes/base/jquery-ui.css" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
+	<apex:includeScript value="{!URLFOR($Resource.ExcelExportHelper, '/swfobject.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.ExcelExportHelper, '/downloadify.min.js')}"/ >
+ <script>
+  var __sfdcSessionId = '{!GETSESSIONID()}';
+</script>
+		<script src="/soap/ajax/21.0/connection.js" type="text/javascript"></script>
+		<script src="/soap/ajax/21.0/apex.js" type="text/javascript"></script>
+		<script type="text/javascript">
+  
+  if(typeof String.prototype.trim !== 'function') {
+    String.prototype.trim = function() {
+      return this.replace(/^\s+|\s+$/g, ''); 
+    }
+  }
+  
+  var isIE = jQuery.browser.msie ? true : false;  
+  var isIE7 =  (jQuery.browser.msie && parseInt(jQuery.browser.version)==7)?true:false;
+  var isDocumentReady = false;
+   if(typeof String.prototype.trim !== 'function') {
+    String.prototype.trim = function() {
+      return this.replace(/^\s+|\s+$/g, ''); 
+    }
+  }
+  
+  var isIE = jQuery.browser.msie ? true : false;  
+  var isIE7 =  (jQuery.browser.msie && parseInt(jQuery.browser.version)==7)?true:false;
+  var isDocumentReady = false;
+  var activeElement;
+  var addMoreFields = [];
+  var nFields = 0;
+  var HeaderLabels = [];
+  var ApiFields=[];
+  var ApiFieldTypes=[];
+  var EnteredValues=[];
+   
+  <apex:repeat value="{!FieldDetails}" var="field" >
+       var fAPIName = "{!field.label}";
+      if(fAPIName != "Version__c" &&  fAPIName != "Description__c" && fAPIName != "Advance_Workflow__r.Description__c" && fAPIName != "CSV_Formatted_Criteria__c" && fAPIName != "CSV_Formatted_Actions__c"){
+          nFields++;
+          HeaderLabels.push(fAPIName);
+          ApiFields.push("{!field.apiName}");
+          var type = "{!field.dataType}";
+          type=type.toUpperCase();
+          if(type == 'ID'){
+            type = 'STRING';
+          }
+          ApiFieldTypes.push(type);
+      }
+    </apex:repeat>
+  
+  $(document).ready(function(){
+    init();
+    isDocumentReady = true;
+  });
+  
+  function init(){
+    addSearchFields();
+    $('.cToDatePicker').datepicker();
+    $('.cFromDatePicker').datepicker();
+    $('.cToDatePicker').datepicker();
+    $('.cFromDatePicker').datepicker();
+      
+        
+            $(".column:contains('P1-')").css("background-color","red");
+            $(".column:contains('P1-')").css("color","white"); 
+            $(".column:contains('P2-')").css("background-color","Orange"); 
+            $(".column:contains('P2-')").css("color","white"); 
+            $(".column:contains('P3-')").css("background-color","green"); 
+            $(".column:contains('P3-')").css("color","white");    
+            $(".column:contains('No Action')").css("background-color","white");      
+  }  
+  
+  function updateHidden(obj,type){
+    if(type == 'tr'){
+       if($(obj).is(':checked')){
+         $(obj).parent().next().val(true);
+         $(obj).parent().parent().next().find('input:hidden').val(false);
+       }
+    }
+    else if (type == 'sr'){
+      if($(obj).is(':checked')){
+       $(obj).parent().next().val(true);
+       $(obj).parent().parent().prev().find('input:hidden').val(false);
+       }
+    }
+    return true;
+  }
+  
+  function checkBoxSelected(){
+   if($(':checkbox:checked').length ==0){
+     alert('Please select IB Assets to create opportunity.'); 
+     return false;
+   }
+   return true;
+  }
+  
+  
+  function addSearchFields(){
+      
+   	 var filterRow = $(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr');
+     var newFilterHeader ='<tr class="headerRow">';
+      newFilterHeader += '<th colspan="0" style="width:28px;">Filter</th>';
+      for(indx=0;indx<nFields;indx++){
+        var newField;
+        if(ApiFieldTypes[indx]== 'INTEGER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="ColElement" colName="'+ApiFields[indx]+'">';
+          newField += '<input type="text" onkeypress="return isNumKey(event);" onkeyup="validateFilter(this,event);" id="Col'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(ApiFieldTypes[indx]== 'STRING'){
+         //alert('---- String'+    ApiFields[indx]);
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="ColElement" colName="'+ApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="Col'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(ApiFieldTypes[indx]== 'OTHER'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="ColElementSmall" colName="'+ApiFields[indx]+'">';
+          newField += '<input type="text" onkeyup="validateFilter(this,event);" id="Col'+indx +'"/>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(ApiFieldTypes[indx]== 'BOOLEAN'){
+          newField = '<th class="headerTextBox" style="padding-left:2px;" >';
+          newField += '<span class="ColElement" colName="'+ApiFields[indx]+'">';
+          newField += '<select class="selectHeader" id="Col'+indx +'" onchange="validateFilter(this,event);" size="1">';
+          newField += '<option value="All">All</option>';
+          newField += '<option value="True">True</option>';
+          newField += '<option value="False">False</option>';
+          newField += '</select>';
+          newField += '</span>';
+          newField += '</th>';
+        }
+        else if(ApiFieldTypes[indx]== 'DATE' || ApiFieldTypes[indx]== 'DATETIME'){
+          //alert('---- DATE'+  ApiFields[indx]);
+          newField = '<th class="headerTextBox" style="padding-left:2px;">';
+          newField += '<span class="ColElement" colName="'+ApiFields[indx]+'">';
+          newField += '<span class="dpLabel">From:</span><input class="cToDatePicker" type="text" onkeyup="validateFilter(this,event);" id="Col'+indx +'-0"/><br/>';
+          newField += '<span class="dpLabel">To:</span><input class="cFromDatePicker" type="text" onkeyup="validateFilter(this,event);" id="Col'+indx +'-1"/><br/>';
+          newField += '</span>';
+          newField += '</th>';
+        } 
+        newFilterHeader += newField;
+      }
+      newFilterHeader += '</tr>'; 
+      filterRow.before(newFilterHeader);
+    }
+
+    function restoreFilterValues(){
+	 var filterRow = $(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr');
+
+      EnteredValues=$(document.getElementById('pgInstallBase:frmInstallBase:SearchToRestore')).val().split("|");
+      
+      var indx=0;
+      
+      filterRow.find('.ColElement, .ColElementSmall').each(function(indx){
+        if(ApiFieldTypes[indx]== 'INTEGER'){
+          $(this).find('input').val(EnteredValues[indx]);
+        }
+        else if(ApiFieldTypes[indx]== 'STRING'){
+          $(this).find('input').val(EnteredValues[indx]);
+        }
+        else if(ApiFieldTypes[indx]== 'BOOLEAN'){
+          $(this).find('select>option').each(function(){
+           if($(this).val()== EnteredValues[indx]){
+            $(this).attr('selected','selected');
+           }
+          });
+        }         
+         else if(ApiFieldTypes[indx]== 'OTHER'){
+          $(this).find('input').val(EnteredValues[indx]);
+        }
+        else if(ApiFieldTypes[indx]== 'DATE' || ApiFieldTypes[indx]== 'DATETIME'){
+         var dateRange = EnteredValues[indx].split('~');
+         $(this).find('input:first').val(dateRange[0]);
+         $(this).find('input:last').val(dateRange[1]);
+        }
+      });
+
+      $('#' + activeElement).focus();
+    }
+    
+    function validateFilter(ctrl,event){
+      if($(ctrl).get(0).nodeName=='INPUT'){
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        if(keycode == '13'){
+          activeElement = $(ctrl).attr('id');
+          filterHelper();
+        }
+      }
+      else if($(ctrl).get(0).nodeName=='SELECT'){
+        filterHelper();
+      }
+      return false;
+    }
+    
+    function isNumKey(evt)
+    {
+		var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57))
+       		return false;
+        return true;
+    }
+    
+    function filterHelper(){
+
+      var SearchText="";
+      var SearchTextToRestore ="";   
+          
+      $('.ColElement, .ColElementSmall').each(function(indx){
+        SearchText += ApiFields[indx] + '.-~>' + ApiFieldTypes[indx]+ '.-~>';
+        var sVal;
+        if(ApiFieldTypes[indx] == 'INTEGER'){
+       
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          SearchText += sVal ;
+          SearchTextToRestore += sVal ;
+         }
+        else if(ApiFieldTypes[indx] == 'STRING'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          SearchText += sVal ;
+          SearchTextToRestore += sVal ;
+         }
+
+         else if(ApiFieldTypes[indx] == 'OTHER' && HeaderLabels[indx]=='Used GB (%)'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+           
+           if((sVal!='')) {
+             var isvalidnumber = validateNumber(sVal);
+           
+            if(!isvalidnumber){
+                  alert ('Enter a Valid Number in Used GB');
+                  $(this).find('input:last').val('');
+                  throw new Error('Enter a Valid Number in Used GB');
+              } else {
+               SearchText += sVal ;
+               SearchTextToRestore += sVal ;
+              }
+           }
+         }
+         else if(ApiFieldTypes[indx] == 'OTHER'){
+          sVal = $(this).find('input').val();
+          sVal = sVal.replace('%','');
+          sVal = sVal.trim();
+          SearchText += sVal ;
+          SearchTextToRestore += sVal ;
+         }
+         else if(ApiFieldTypes[indx] == 'BOOLEAN'){
+           sVal = $(this).find('select>option:selected').val();
+           SearchText += sVal ;
+           SearchTextToRestore += sVal;
+         }
+         else if(ApiFieldTypes[indx] == 'DATE' || ApiFieldTypes[indx] == 'DATETIME'){
+          var fromDt = $(this).find('input:first').val();
+          var toDt = $(this).find('input:last').val();
+          
+          var validFrom=validDate(fromDt);
+          var validTo=validDate(toDt);
+          
+          if( validFrom && validTo){
+              sVal = $(this).find('input:first').val() + '~' + $(this).find('input:last').val();
+              SearchText += sVal ;
+              SearchTextToRestore += sVal;
+          }
+          else{
+            if(!validFrom) {
+               
+              $(this).find('input:first').val('');
+              throw new Error('Invalid "from" date entered');
+            }
+            else if(!validTo){
+                 
+                $(this).find('input:last').val('');
+                throw new Error('Invalid "to" date entered');
+            }
+          }
+         }
+         SearchTextToRestore += "|";
+         SearchText += "|"; 
+       });
+       applyFilter(SearchText);  
+       $(document.getElementById('pgInstallBase:frmInstallBase:SearchToRestore')).val(SearchTextToRestore);
+       return false;
+    }
+    
+    function clearFilterJS(){
+      $(document.getElementById('pgInstallBase:frmInstallBase:SearchToRestore')).val('');
+      clearFilter();
+   }   
+    function validateNumber(n) {
+     return !isNaN(parseFloat(n)) && isFinite(n);
+   }
+  
+  function validDate(val){
+        var valid= false;
+        if(val.length==0){
+          valid=true;
+        }
+        else if(val.length >7 && validateUSDate(val)){
+            valid= true;
+        }
+        return valid;
+    }
+    
+    function validateUSDate( strValue ) {
+          var objRegExp = /^\d{1,2}(\-|\/|\.)\d{1,2}\1\d{4}$/
+          
+          //check to see if in correct format
+          if(!objRegExp.test(strValue))
+            return false; //doesn't match pattern, bad date
+          else{
+            var strSeparator = strValue.substring(2,3) 
+            var arrayDate = strValue.split(strSeparator); 
+            //create a lookup for months not equal to Feb.
+            var arrayLookup = { '01' : 31,'03' : 31, 
+                                '04' : 30,'05' : 31,
+                                '06' : 30,'07' : 31,
+                                '08' : 31,'09' : 30,
+                                '10' : 31,'11' : 30,'12' : 31}
+            var intDay = parseInt(arrayDate[1],10); 
+        
+            //check if month value and day value agree
+            if(arrayLookup[arrayDate[0]] != null) {
+              if(intDay <= arrayLookup[arrayDate[0]] && intDay != 0)
+                return true; //found in lookup table, good date
+            }
+            
+            var intMonth = parseInt(arrayDate[0],10);
+            if (intMonth == 2) { 
+               var intYear = parseInt(arrayDate[2]);
+               if (intDay > 0 && intDay < 29) {
+                   return true;
+               }
+               else if (intDay == 29) {
+                 if ((intYear % 4 == 0) && (intYear % 100 != 0) || 
+                     (intYear % 400 == 0)) {
+                      // year div by 4 and ((not div by 100) or div by 400) ->ok
+                     return true;
+                 }   
+               }
+            }
+          }  
+          return false; //any other values, bad date
+        }
+
+     function addRemoveRules(){ 
+          window.setTimeout(showAddRemoveAction,100);
+      }   
+
+</script> 
+    
+    <apex:actionFunction action="{!applyFilter}" name="applyFilter" reRender="pbInstallBase">
+		<apex:param assignTo="{!strSearch}" name="Search" value="" />
+	</apex:actionFunction>
+	<apex:actionFunction action="{!AddRule}" name="saveJS" reRender="pbtInstallBase,pageMessages" />
+	<apex:actionFunction action="{!Cancel}" name="cancelJS" reRender="pbtInstallBase,pageMessages" />
+	<apex:actionfunction action="{!clearFilter}" name="clearFilter"
+				rerender="pnl,hiddenSearchToRestore,pageMessages"
+				status="clearFilterStatus" />
         <apex:sectionHeader subtitle="{!ruleExecutionPlan.Name}" title="Rule Execution Plan Edit"/>
-        <apex:pageMessages />
-        <apex:pageBlock title="Rules">
+        <apex:pageMessages id="pageMessages"/>
+        <apex:pageBlock title="Rules" id="pbInstallBase">
             <apex:pageBlockButtons >
-                <apex:commandButton value="Save" action="{!AddRule}" rendered="{!(ruleExecutionPlan.Enabled__c)}" /> 
-                <apex:commandButton value="Cancel" action="{!Cancel}"/> 
+             <div id="smartSearchStatusContainer" style="height:20px;padding-bottom: 8px;padding-left: 2px;">
+                              <span style="">  <input id="clearFilterBtn" type="button" class="btn" value="Clear Filter" onclick="clearFilterJS();" style="align:left"/>  </span>
+                              <apex:actionstatus id="clearFilterStatus">
+                              <apex:facet name="start">
+                              <span style="color:red;font-weight:bold;">Clearing Filter...</span>
+                              <img src="/img/loading.gif" alt=" "/>
+                              </apex:facet>
+                              </apex:actionstatus> 
+             </div>
+             <input type="button" class="btn" value="Save" onclick="saveJS();" style="align:left"/>
+             <input type="button" class="btn" value="Cancel" onclick="cancelJS();" style="align:left"/>
+<!--             <apex:commandButton value="Save" action="{!AddRule}" rendered="{!(ruleExecutionPlan.Enabled__c)}" />  -->
+<!--                 <apex:commandButton value="Cancel" action="{!Cancel}"/>    -->
             </apex:pageBlockButtons>
-            <apex:pageBlockTable rendered="{!IF(listAddRulesPerObject.size > 0,True,False)}" value="{!listAddRulesPerObject}" var="RO">
+            
+       
+            
+            <!-- Update by Nikil - added outputpanel for rendering purpose -->
+           <apex:outputPanel id="pnl" layout="block">
+           <apex:outputPanel id="opNoRules" rendered="{!IF(listAddRulesPerObject.size == 0,True,False)}" layout="block">
+           		No Rules to display.
+           </apex:outputPanel>
+            <apex:pageBlockTable id="pbtInstallBase" rendered="{!IF(listAddRulesPerObject.size > 0,True,False)}" value="{!listAddRulesPerObject}" var="RO">
                 <apex:column headerValue="Add/Remove">
                     <apex:inputCheckbox value="{!RO.isAdd}"  disabled="{!NOT(ruleExecutionPlan.Enabled__c)}"/> 
                 </apex:column>
@@ -39,6 +694,7 @@ Purpose : Custom  page to add ruless to AWE
                         <apex:selectOptions value="{!ExecutionBehavior}" />
                     </apex:selectList>
             </apex:column>
+            
             <apex:column headerValue="Display Criteria" >
                   <apex:outputlink target="_top" value="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!RO.Rules.Id}">
                         <apex:outputText style="width: 25px;" value="{!RO.Criteria}" title="{!RO.DisplayCriteria}"></apex:outputText>
@@ -48,7 +704,8 @@ Purpose : Custom  page to add ruless to AWE
                   <apex:outputlink target="_top" value="/apex/AW_EnhancedCriteriaManager_VF?ruleId={!RO.Rules.Id}">
                         <apex:outputText style="width: 25px;" value="{!RO.Actions}" title="{!RO.DisplayActions}"></apex:outputText>
                   </apex:outputlink>                 
-            </apex:column>     
+            </apex:column>
+              
                <!-- 
                <apex:column value="{!RO.Rules.Object__c}" width="55%"/>
                   <apex:column value="{!RO.Rules.Evaluation_Rule__c}" width="55%"/>
@@ -56,6 +713,56 @@ Purpose : Custom  page to add ruless to AWE
                 <apex:column value="{!RO.Rules.DisplayActions__c}" width="55%"/> -->                
                 <!-- apex:column value="{!RO.Rules.Object__c}" width="10%"/!-->
            </apex:pageBlockTable> 
+           <apex:outputPanel id="upperScriptPnl">
+		<script>
+               if(isDocumentReady){ 
+              	 
+               addMoreFields = [];
+               
+             
+                   if($(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr').length ==1){
+                    addSearchFields();
+                   }
+					
+                   $('.cToDatePicker').datepicker();
+                   $('.cFromDatePicker').datepicker();
+
+                    $(".column:contains('P1-')").css("background-color","red");
+                    $(".column:contains('P1-')").css("color","white"); 
+                    $(".column:contains('P2-')").css("background-color","Orange"); 
+                    $(".column:contains('P2-')").css("color","white"); 
+                    $(".column:contains('P3-')").css("background-color","green"); 
+                    $(".column:contains('P3-')").css("color","white");    
+                    $(".column:contains('No Action')").css("background-color","white");    
+                   restoreFilterValues();
+               
+             }
+          </script>
+    	</apex:outputPanel>
+          </apex:outputPanel>
         </apex:pageBlock>
+        
+        	<script type="text/javascript">
+            if(isDocumentReady){ 
+           //alert ('script 2332');
+        
+               addMoreFields = [];
+              
+             
+                   if($(document.getElementById('pgInstallBase:frmInstallBase:pbInstallBase:pbtInstallBase')).find('thead>tr').length ==1){
+                    addSearchFields();
+                   }
+				  
+                   $('.cToDatePicker').datepicker();
+                   $('.cFromDatePicker').datepicker();
+                   restoreFilterValues();
+               
+             }
+      </script>
+			
+
+			<apex:outputPanel id="hiddenSearchToRestore">
+				<apex:inputHidden value="{!strSearchToRestore}" id="SearchToRestore" />
+			</apex:outputPanel>
     </apex:form>
 </apex:page>
